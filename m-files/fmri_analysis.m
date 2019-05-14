@@ -424,10 +424,20 @@ if opts.do_dual_coded_imgs
     
     dualmap_ix = 1;
     cmap = CyBuGyRdYl;
-    clrs = {[1 1 1], [0 1 0], [0 2/3 2/3]};
+    
+    clrs = {[1 1 1], [0 2/3 2/3]};
     lnstl = {'-','-','-'};
-    clrs_alt = {[1 1 1], [0 2/3 2/3]};
+    
+    clrs_alt = {[0 1 0], [0 2/3 2/3]};
     lnstl_alt = {'-','-'};
+    
+    clrs_expl = {[1 0 1], [0 2/3 2/3]};
+    lnstl_expl = {'-','-'};
+    
+    clrs_roi = {[0 2/3 2/3]};
+    lnstl_roi = {'-'};
+    
+    
     
     if opts.show_roi_mask
         all_rois_mask = fullfile(roi_dir, 'all_rois.nii');
@@ -449,24 +459,22 @@ if opts.do_dual_coded_imgs
                     else
                         contour_contrast_significance = '';
                     end
-
-                    contour_conj_significance_1 = fullfile(conjmap_dir, 'cluster-level_SLvsIGf_AND_SRvsIGf.nii');
-                    contour_conj_significance_2 = fullfile(conjmap_dir, 'cluster-level_SLvsIGf_AND_SRvsIGf_AND_SBvsIGf.nii');
-
+                    contour_conj_significance = fullfile(conjmap_dir, 'cluster-level_SLvsIGf_AND_SRvsIGf.nii');
+                    
                 case 'voxel'
                     if opts.show_contour_contrast_significance
                         contour_contrast_significance = fullfile(glm_dir, 'voxel-level_significant_clusters_binary_con_0001_and_con_0002.nii'); 
                     else
                         contour_contrast_significance = '';
                     end
-                    contour_conj_significance_1 = fullfile(conjmap_dir, 'voxel-level_SLvsIGf_AND_SRvsIGf.nii');
-                    contour_conj_significance_2 = fullfile(conjmap_dir, 'voxel-level_SLvsIGf_AND_SRvsIGf_AND_SBvsIGf.nii');
+                    contour_conj_significance = fullfile(conjmap_dir, 'voxel-level_SLvsIGf_AND_SRvsIGf.nii');
+                    
             end
 
             if opts.show_roi_mask
-                make_dual_coded_images(glm_dir, figure_dir, char(inference), t1img, dualmap_ix, contour_contrast_significance, cmap, save_fig, contour_conj_significance_1, contour_conj_significance_2, all_rois_mask, clrs, lnstl);
+                make_dual_coded_images(glm_dir, figure_dir, char(inference), t1img, dualmap_ix, contour_contrast_significance, cmap, save_fig, contour_conj_significance, all_rois_mask, clrs, lnstl);
             else
-                make_dual_coded_images(glm_dir, figure_dir, char(inference), t1img, dualmap_ix, contour_contrast_significance, cmap, save_fig, contour_conj_significance_1, contour_conj_significance_2, clrs, lnstl);
+                make_dual_coded_images(glm_dir, figure_dir, char(inference), t1img, dualmap_ix, contour_contrast_significance, cmap, save_fig, contour_conj_significance, clrs, lnstl);
             end
 
             % Successful stop_{right} minus ignore_{fast}
@@ -481,22 +489,22 @@ if opts.do_dual_coded_imgs
                     else
                         contour_contrast_significance = '';
                     end
-                    contour_conj_significance_1 = fullfile(conjmap_dir, 'cluster-level_SLvsIGf_AND_SRvsIGf.nii');
-                    contour_conj_significance_2 = fullfile(conjmap_dir, 'cluster-level_SLvsIGf_AND_SRvsIGf_AND_SBvsIGf.nii');
+                    contour_conj_significance = fullfile(conjmap_dir, 'cluster-level_SLvsIGf_AND_SRvsIGf.nii');
+                    
                 case 'voxel'
                     if opts.show_contour_contrast_significance
                         contour_contrast_significance = fullfile(glm_dir, 'voxel-level_significant_clusters_binary_con_0001_and_con_0002.nii');
                     else
                         contour_contrast_significance = '';
                     end
-                    contour_conj_significance_1 = fullfile(conjmap_dir, 'voxel-level_SLvsIGf_AND_SRvsIGf.nii');
-                    contour_conj_significance_2 = fullfile(conjmap_dir, 'voxel-level_SLvsIGf_AND_SRvsIGf_AND_SBvsIGf.nii');
+                    contour_conj_significance = fullfile(conjmap_dir, 'voxel-level_SLvsIGf_AND_SRvsIGf.nii');
+                    
             end
 
             if opts.show_roi_mask
-                make_dual_coded_images(glm_dir, figure_dir, char(inference), t1img, dualmap_ix, contour_contrast_significance, cmap, save_fig, contour_conj_significance_1, contour_conj_significance_2, all_rois_mask, clrs, lnstl);
+                make_dual_coded_images(glm_dir, figure_dir, char(inference), t1img, dualmap_ix, contour_contrast_significance, cmap, save_fig, contour_conj_significance, all_rois_mask, clrs, lnstl);
             else
-                make_dual_coded_images(glm_dir, figure_dir, char(inference), t1img, dualmap_ix, contour_contrast_significance, cmap, save_fig, contour_conj_significance_1, contour_conj_significance_2, clrs, lnstl);
+                make_dual_coded_images(glm_dir, figure_dir, char(inference), t1img, dualmap_ix, contour_contrast_significance, cmap, save_fig, contour_conj_significance, clrs, lnstl);
             end
 
             % Successful stop_{both} minus ignore_{fast}
@@ -511,21 +519,20 @@ if opts.do_dual_coded_imgs
                     else
                         contour_contrast_significance = '';
                     end
-                    contour_conj_significance = fullfile(conjmap_dir, 'cluster-level_SLvsIGf_AND_SRvsIGf_AND_SBvsIGf.nii');
-
+                    
                 case 'voxel'
                     if opts.show_contour_contrast_significance
                         contour_contrast_significance = fullfile(glm_dir, 'voxel-level_significant_clusters_binary_con_0001_and_con_0002.nii');
                     else
                         contour_contrast_significance = '';
                     end
-                    contour_conj_significance = fullfile(conjmap_dir, 'voxel-level_SLvsIGf_AND_SRvsIGf_AND_SBvsIGf.nii');
+                    
             end
 
             if opts.show_roi_mask
-                make_dual_coded_images(glm_dir, figure_dir, char(inference), t1img, dualmap_ix, contour_contrast_significance, cmap, save_fig, contour_conj_significance, all_rois_mask, clrs_alt, lnstl_alt);
+                make_dual_coded_images(glm_dir, figure_dir, char(inference), t1img, dualmap_ix, contour_contrast_significance, cmap, save_fig, all_rois_mask, clrs_roi, lnstl_roi);
             else
-                make_dual_coded_images(glm_dir, figure_dir, char(inference), t1img, dualmap_ix, contour_contrast_significance, cmap, save_fig, contour_conj_significance, clrs_alt, lnstl_alt);
+                make_dual_coded_images(glm_dir, figure_dir, char(inference), t1img, dualmap_ix, contour_contrast_significance, cmap, save_fig);
             end
             
             % Successful stop_{left} minus successful stop_{both}
@@ -551,9 +558,9 @@ if opts.do_dual_coded_imgs
             end
 
             if opts.show_roi_mask
-                make_dual_coded_images(glm_dir, figure_dir, char(inference), t1img, dualmap_ix, contour_contrast_significance, cmap, save_fig, contour_conj_significance, all_rois_mask, clrs_alt, lnstl_alt);
+                make_dual_coded_images(glm_dir, figure_dir, char(inference), t1img, dualmap_ix, contour_contrast_significance, cmap, save_fig, contour_conj_significance, all_rois_mask, clrs, lnstl);
             else
-                make_dual_coded_images(glm_dir, figure_dir, char(inference), t1img, dualmap_ix, contour_contrast_significance, cmap, save_fig, contour_conj_significance, clrs_alt, lnstl_alt);
+                make_dual_coded_images(glm_dir, figure_dir, char(inference), t1img, dualmap_ix, contour_contrast_significance, cmap, save_fig, contour_conj_significance, clrs, lnstl);
             end
 
             % Successful stop_{right} minus successful stop_{both}
@@ -579,9 +586,9 @@ if opts.do_dual_coded_imgs
             end
 
             if opts.show_roi_mask
-                make_dual_coded_images(glm_dir, figure_dir, char(inference), t1img, dualmap_ix, contour_contrast_significance, cmap, save_fig, contour_conj_significance, all_rois_mask, clrs_alt, lnstl_alt);
+                make_dual_coded_images(glm_dir, figure_dir, char(inference), t1img, dualmap_ix, contour_contrast_significance, cmap, save_fig, contour_conj_significance, all_rois_mask, clrs, lnstl);
             else
-                make_dual_coded_images(glm_dir, figure_dir, char(inference), t1img, dualmap_ix, contour_contrast_significance, cmap, save_fig, contour_conj_significance, clrs_alt, lnstl_alt);
+                make_dual_coded_images(glm_dir, figure_dir, char(inference), t1img, dualmap_ix, contour_contrast_significance, cmap, save_fig, contour_conj_significance, clrs, lnstl);
             end
             
         case 'exploratory'
@@ -610,9 +617,9 @@ if opts.do_dual_coded_imgs
             end
 
             if opts.show_roi_mask
-                make_dual_coded_images(glm_dir, figure_dir, char(inference), t1img, dualmap_ix, contour_contrast_significance, cmap, save_fig, contour_conj_significance, all_rois_mask, clrs_alt, lnstl_alt);
+                make_dual_coded_images(glm_dir, figure_dir, char(inference), t1img, dualmap_ix, contour_contrast_significance, cmap, save_fig, contour_conj_significance, all_rois_mask, clrs, lnstl);
             else
-                make_dual_coded_images(glm_dir, figure_dir, char(inference), t1img, dualmap_ix, contour_contrast_significance, cmap, save_fig, contour_conj_significance, clrs_alt, lnstl_alt);
+                make_dual_coded_images(glm_dir, figure_dir, char(inference), t1img, dualmap_ix, contour_contrast_significance, cmap, save_fig, contour_conj_significance, clrs, lnstl);
             end
 
             % Successful stop_{right} minus successful stop_{both} - with additional
@@ -639,9 +646,9 @@ if opts.do_dual_coded_imgs
             end
 
             if opts.show_roi_mask
-                make_dual_coded_images(glm_dir, figure_dir, char(inference), t1img, dualmap_ix, contour_contrast_significance, cmap, save_fig, contour_conj_significance, all_rois_mask, clrs_alt, lnstl_alt);
+                make_dual_coded_images(glm_dir, figure_dir, char(inference), t1img, dualmap_ix, contour_contrast_significance, cmap, save_fig, contour_conj_significance, all_rois_mask, clrs, lnstl);
             else
-                make_dual_coded_images(glm_dir, figure_dir, char(inference), t1img, dualmap_ix, contour_contrast_significance, cmap, save_fig, contour_conj_significance, clrs_alt, lnstl_alt);
+                make_dual_coded_images(glm_dir, figure_dir, char(inference), t1img, dualmap_ix, contour_contrast_significance, cmap, save_fig, contour_conj_significance, clrs, lnstl);
             end
             
             
@@ -657,8 +664,7 @@ if opts.do_dual_coded_imgs
                     else
                         contour_contrast_significance = '';
                     end
-                    contour_conj_significance_1 = fullfile(conjmap_dir, 'cluster-level_SLvsNSs_AND_SRvsNSs.nii');
-                    contour_conj_significance_2 = fullfile(conjmap_dir, 'cluster-level_SLvsNSs_AND_SRvsNSs_AND_SBvsNSs.nii');
+                    contour_conj_significance = fullfile(conjmap_dir, 'cluster-level_SLvsNSs_AND_SRvsNSs_AND_SBvsNSs.nii');
 
                 case 'voxel'
                     if opts.show_contour_contrast_significance
@@ -666,15 +672,14 @@ if opts.do_dual_coded_imgs
                     else
                         contour_contrast_significance = '';
                     end
-                    contour_conj_significance_1 = fullfile(conjmap_dir, 'voxel-level_SLvsNSs_AND_SRvsNSs.nii');
-                    contour_conj_significance_2 = fullfile(conjmap_dir, 'voxel-level_SLvsNSs_AND_SRvsNSs_AND_SBvsNSs.nii');
+                    contour_conj_significance = fullfile(conjmap_dir, 'voxel-level_SLvsNSs_AND_SRvsNSs_AND_SBvsNSs.nii');
 
             end
 
             if opts.show_roi_mask
-                make_dual_coded_images(glm_dir, figure_dir, char(inference), t1img, dualmap_ix, contour_contrast_significance, cmap, save_fig, contour_conj_significance_1, contour_conj_significance_2, all_rois_mask, clrs, lnstl);
+                make_dual_coded_images(glm_dir, figure_dir, char(inference), t1img, dualmap_ix, contour_contrast_significance, cmap, save_fig, contour_conj_significance, all_rois_mask, clrs_alt, lnstl_alt);
             else
-                make_dual_coded_images(glm_dir, figure_dir, char(inference), t1img, dualmap_ix, contour_contrast_significance, cmap, save_fig, contour_conj_significance_1, contour_conj_significance_2, clrs, lnstl);
+                make_dual_coded_images(glm_dir, figure_dir, char(inference), t1img, dualmap_ix, contour_contrast_significance, cmap, save_fig, contour_conj_significance, clrs_alt, lnstl_alt);
             end
             
             % Successful stop_{right} minus no-signal_{slow}
@@ -689,8 +694,7 @@ if opts.do_dual_coded_imgs
                     else
                         contour_contrast_significance = '';
                     end
-                    contour_conj_significance_1 = fullfile(conjmap_dir, 'cluster-level_SLvsNSs_AND_SRvsNSs.nii');
-                    contour_conj_significance_2 = fullfile(conjmap_dir, 'cluster-level_SLvsNSs_AND_SRvsNSs_AND_SBvsNSs.nii');
+                    contour_conj_significance = fullfile(conjmap_dir, 'cluster-level_SLvsNSs_AND_SRvsNSs_AND_SBvsNSs.nii');
 
                 case 'voxel'
                     if opts.show_contour_contrast_significance
@@ -698,14 +702,13 @@ if opts.do_dual_coded_imgs
                     else
                         contour_contrast_significance = '';
                     end
-                    contour_conj_significance_1 = fullfile(conjmap_dir, 'voxel-level_SLvsNSs_AND_SRvsNSs.nii');
-                    contour_conj_significance_2 = fullfile(conjmap_dir, 'voxel-level_SLvsNSs_AND_SRvsNSs_AND_SBvsNSs.nii');
+                    contour_conj_significance = fullfile(conjmap_dir, 'voxel-level_SLvsNSs_AND_SRvsNSs_AND_SBvsNSs.nii');
             end
 
             if opts.show_roi_mask
-                make_dual_coded_images(glm_dir, figure_dir, char(inference), t1img, dualmap_ix, contour_contrast_significance, cmap, save_fig, contour_conj_significance_1, contour_conj_significance_2, all_rois_mask, clrs, lnstl);
+                make_dual_coded_images(glm_dir, figure_dir, char(inference), t1img, dualmap_ix, contour_contrast_significance, cmap, save_fig, contour_conj_significance, all_rois_mask, clrs_alt, lnstl_alt);
             else
-                make_dual_coded_images(glm_dir, figure_dir, char(inference), t1img, dualmap_ix, contour_contrast_significance, cmap, save_fig, contour_conj_significance_1, contour_conj_significance_2, clrs, lnstl);
+                make_dual_coded_images(glm_dir, figure_dir, char(inference), t1img, dualmap_ix, contour_contrast_significance, cmap, save_fig, contour_conj_significance, clrs_alt, lnstl_alt);
             end
             
             % Successful stop_{both} minus no-signal_{slow}
@@ -720,7 +723,6 @@ if opts.do_dual_coded_imgs
                     else
                         contour_contrast_significance = '';
                     end
-
                     contour_conj_significance = fullfile(conjmap_dir, 'cluster-level_SLvsNSs_AND_SRvsNSs_AND_SBvsNSs.nii');
 
                 case 'voxel'
@@ -729,7 +731,6 @@ if opts.do_dual_coded_imgs
                     else
                         contour_contrast_significance = '';
                     end
-
                     contour_conj_significance = fullfile(conjmap_dir, 'voxel-level_SLvsNSs_AND_SRvsNSs_AND_SBvsNSs.nii');
             end
 
@@ -762,9 +763,9 @@ if opts.do_dual_coded_imgs
             end
 
             if opts.show_roi_mask
-                make_dual_coded_images(glm_dir, figure_dir, char(inference), t1img, dualmap_ix, contour_contrast_significance, cmap, save_fig, contour_conj_significance, all_rois_mask, clrs_alt, lnstl_alt);
+                make_dual_coded_images(glm_dir, figure_dir, char(inference), t1img, dualmap_ix, contour_contrast_significance, cmap, save_fig, contour_conj_significance, all_rois_mask, clrs_expl, lnstl_expl);
             else
-                make_dual_coded_images(glm_dir, figure_dir, char(inference), t1img, dualmap_ix, contour_contrast_significance, cmap, save_fig, contour_conj_significance, clrs_alt, lnstl_alt);
+                make_dual_coded_images(glm_dir, figure_dir, char(inference), t1img, dualmap_ix, contour_contrast_significance, cmap, save_fig, contour_conj_significance, clrs_expl, lnstl_expl);
             end
 
             % Successful stop_{right} minus ignore_{slow}
@@ -790,9 +791,9 @@ if opts.do_dual_coded_imgs
             end
 
             if opts.show_roi_mask
-                make_dual_coded_images(glm_dir, figure_dir, char(inference), t1img, dualmap_ix, contour_contrast_significance, cmap, save_fig, contour_conj_significance, all_rois_mask, clrs_alt, lnstl_alt);
+                make_dual_coded_images(glm_dir, figure_dir, char(inference), t1img, dualmap_ix, contour_contrast_significance, cmap, save_fig, contour_conj_significance, all_rois_mask, clrs_expl, lnstl_expl);
             else
-                make_dual_coded_images(glm_dir, figure_dir, char(inference), t1img, dualmap_ix, contour_contrast_significance, cmap, save_fig, contour_conj_significance, clrs_alt, lnstl_alt);
+                make_dual_coded_images(glm_dir, figure_dir, char(inference), t1img, dualmap_ix, contour_contrast_significance, cmap, save_fig, contour_conj_significance, clrs_expl, lnstl_expl);
             end
 
             % Successful stop_{both} minus ignore_{slow}
@@ -818,9 +819,9 @@ if opts.do_dual_coded_imgs
             end
 
             if opts.show_roi_mask
-                make_dual_coded_images(glm_dir, figure_dir, char(inference), t1img, dualmap_ix, contour_contrast_significance, cmap, save_fig, contour_conj_significance, all_rois_mask, clrs_alt, lnstl_alt);
+                make_dual_coded_images(glm_dir, figure_dir, char(inference), t1img, dualmap_ix, contour_contrast_significance, cmap, save_fig, contour_conj_significance, all_rois_mask, clrs_expl, lnstl_expl);
             else
-                make_dual_coded_images(glm_dir, figure_dir, char(inference), t1img, dualmap_ix, contour_contrast_significance, cmap, save_fig, contour_conj_significance, clrs_alt, lnstl_alt);
+                make_dual_coded_images(glm_dir, figure_dir, char(inference), t1img, dualmap_ix, contour_contrast_significance, cmap, save_fig, contour_conj_significance, clrs_expl, lnstl_expl);
             end
 
             % Successful stop_{left} minus successful stop_{both} - with additional
@@ -881,69 +882,6 @@ if opts.do_dual_coded_imgs
                 make_dual_coded_images(glm_dir, figure_dir, char(inference), t1img, dualmap_ix, contour_contrast_significance, cmap, save_fig, contour_conj_significance, clrs_alt, lnstl_alt);
             end
 
-            % Successful stop_{left} minus successful stop_{both} - with additional
-            % IGs constraint - four contours
-            % -------------------------------------------------------------
-
-            glm_dir = fullfile(output_dir, 'ostt_SL_vs_SB');
-
-            switch char(inference)
-                case 'cluster'
-                    if opts.show_contour_contrast_significance
-                        contour_contrast_significance = fullfile(glm_dir, 'cluster-level_significant_clusters_binary_con_0001_and_con_0002.nii');
-                    else
-                        contour_contrast_significance = '';
-                    end
-                    contour_conj_significance_1 = fullfile(conjmap_dir, 'cluster-level_SLvsSB_AND_SRvsSB.nii');
-                    contour_conj_significance_2 = fullfile(conjmap_dir, 'cluster-level_SLvsSB_AND_SRvsSB_AND_SLvsIGs_AND_SRvsIGs.nii');
-                case 'voxel'
-                    if opts.show_contour_contrast_significance
-                        contour_contrast_significance = fullfile(glm_dir, 'voxel-level_significant_clusters_binary_con_0001_and_con_0002.nii');
-                    else
-                        contour_contrast_significance = '';
-                    end
-                    contour_conj_significance_1 = fullfile(conjmap_dir, 'voxel-level_SLvsSB_AND_SRvsSB.nii');
-                    contour_conj_significance_2 = fullfile(conjmap_dir, 'voxel-level_SLvsSB_AND_SRvsSB_AND_SLvsIGs_AND_SRvsIGs.nii');
-            end
-
-            if opts.show_roi_mask
-                make_dual_coded_images(glm_dir, figure_dir, char(inference), t1img, dualmap_ix, contour_contrast_significance, cmap, save_fig, contour_conj_significance_1, contour_conj_significance_2, all_rois_mask, clrs_alt, lnstl_alt);
-            else
-                make_dual_coded_images(glm_dir, figure_dir, char(inference), t1img, dualmap_ix, contour_contrast_significance, cmap, save_fig, contour_conj_significance_1, contour_conj_significance_2, clrs_alt, lnstl_alt);
-            end
-
-            % Successful stop_{right} minus successful stop_{both} - with additional
-            % IGs constraint - four contours
-            % -------------------------------------------------------------
-
-            glm_dir = fullfile(output_dir, 'ostt_SR_vs_SB');
-
-            switch char(inference)
-                case 'cluster'
-                    if opts.show_contour_contrast_significance
-                        contour_contrast_significance = fullfile(glm_dir, 'cluster-level_significant_clusters_binary_con_0001_and_con_0002.nii');
-                    else
-                        contour_contrast_significance = '';
-                    end
-                    contour_conj_significance_1 = fullfile(conjmap_dir, 'cluster-level_SLvsSB_AND_SRvsSB.nii');
-                    contour_conj_significance_2 = fullfile(conjmap_dir, 'cluster-level_SLvsSB_AND_SRvsSB_AND_SLvsIGs_AND_SRvsIGs.nii');
-                case 'voxel'
-                    if opts.show_contour_contrast_significance
-                        contour_contrast_significance = fullfile(glm_dir, 'voxel-level_significant_clusters_binary_con_0001_and_con_0002.nii');
-                    else
-                        contour_contrast_significance = '';
-                    end
-                    contour_conj_significance_1 = fullfile(conjmap_dir, 'voxel-level_SLvsSB_AND_SRvsSB.nii');
-                    contour_conj_significance_2 = fullfile(conjmap_dir, 'voxel-level_SLvsSB_AND_SRvsSB_AND_SLvsIGs_AND_SRvsIGs.nii');
-            end
-
-            if opts.show_roi_mask
-                make_dual_coded_images(glm_dir, figure_dir, char(inference), t1img, dualmap_ix, contour_contrast_significance, cmap, save_fig, contour_conj_significance_1, contour_conj_significance_2, all_rois_mask, clrs_alt, lnstl_alt);
-            else
-                make_dual_coded_images(glm_dir, figure_dir, char(inference), t1img, dualmap_ix, contour_contrast_significance, cmap, save_fig, contour_conj_significance_1, contour_conj_significance_2, clrs_alt, lnstl_alt);
-            end
-            
-            
     end
     
 end
