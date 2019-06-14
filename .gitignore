@@ -1,0 +1,7 @@
+packrat/lib*/
+.Rproj.user
+.httr-oauth
+man/*.Rd
+.RData
+.Rhistory
+*.html
