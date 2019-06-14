@@ -25,33 +25,32 @@ pathstr         = fileparts(currentFile);
 project_dir     = fullfile(pathstr,'../');
 data_dir        = fullfile(project_dir,'data');
 
-
 t1_dir          = fullfile(data_dir,'fmri','anatomical_images');
 roi_dir         = fullfile(data_dir,'fmri','region_of_interest_masks');
-output_dir      = fullfile(data_dir,'derivatives','fmri','m_anatomical_roi_and_whole_brain_analysis');
 
+switch lower(analysis_type)
+    case 'planned'
+        output_dir      = fullfile(data_dir,'derivatives', 'a04_planned_anatomical_roi_and_whole_brain_analysis');
+        figure_dir      = fullfile(project_dir, 'figures', 'a04_planned_anatomical_roi_and_whole_brain_analysis');
+    case 'exploratory'
+        output_dir_planned = fullfile(data_dir,'derivatives', 'a04_planned_anatomical_roi_and_whole_brain_analysis');
+        output_dir      = fullfile(data_dir,'derivatives', 'a05_exploratory_anatomical_roi_and_whole_brain_analysis');
+        figure_dir      = fullfile(project_dir, 'figures', 'a05_exploratory_anatomical_roi_and_whole_brain_analysis');
+end
+        
 if ~exist(output_dir, 'dir')
     mkdir(output_dir);
 end
-
-figure_dir      = fullfile(project_dir,'results','figures', 'm_anatomical_roi_and_whole_brain_analysis', analysis_type);
 
 if ~exist(figure_dir, 'dir')
     mkdir(figure_dir);
 end
 
-
-
-
-
 t1img           = fullfile(t1_dir,'group_mean_T1.nii');
 colormaps_file  = fullfile(data_dir,'fmri','colormaps.mat');
 load(colormaps_file);
 
-
-
 % Paths
-addpath(genpath('/Users/bramzandbelt/Documents/MATLAB/spm12/'))
 addpath(genpath(fullfile(project_dir,'opt')))
 addpath(genpath(fullfile(project_dir,'code')))
 
@@ -64,354 +63,265 @@ cd(project_dir)
 
 % Run statistical models
 % =========================================================================
-if opts.do_ostt
-    
-    conmap_dir      = fullfile(data_dir,'fmri','contrast_images');
-    batch_dir       = fullfile(project_dir,'m-files','spm_batches');
-    
-    anat_roi_mask   = fullfile(roi_dir, 'anatomical_classical_svc', 'anatomical_rois.nii');
+conmap_dir      = fullfile(data_dir,'fmri','contrast_images');
+batch_dir       = fullfile(project_dir,'m-files','spm_batches');
 
-    switch lower(analysis_type)
-        case 'planned'
+anat_roi_mask   = fullfile(roi_dir, 'anatomical_classical_svc', 'anatomical_rois.nii');
 
-            % successful stop_{left} vs. ignore_{fast}
-            % -------------------------------------------------------------
+switch lower(analysis_type)
+    case 'planned'
 
-            conmap_ix = 1;
-            con_name_pos = 'successful stop_{left}';
-            con_name_neg = 'ignore_{fast}';
-            glm_dir = fullfile(output_dir, 'ostt_SL_vs_IGf');
+        % successful stop_{left} vs. ignore_{fast}
+        % -------------------------------------------------------------
 
-            % Run one-sample t-test
-            one_sample_ttest(conmap_dir, batch_dir, conmap_ix, con_name_pos, con_name_neg, glm_dir);
+        conmap_ix = 1;
+        con_name_pos = 'successful stop_{left}';
+        con_name_neg = 'ignore_{fast}';
+        glm_dir = fullfile(output_dir, 'ostt_SL_vs_IGf');
+        
+        run_ostt_and_write_clusters(conmap_dir, batch_dir, conmap_ix, con_name_pos, con_name_neg, glm_dir, opts, inference, anat_roi_mask);
+        
+        % successful stop_{right} vs. ignore_{fast}
+        % -------------------------------------------------------------
 
-            % Write significant clusters within anatomical ROIs
-            write_significant_clusters(glm_dir, char(inference), [1, 2], anat_roi_mask);
+        conmap_ix = 2;
+        con_name_pos = 'successful stop_{right}';
+        con_name_neg = 'ignore_{fast}';
+        glm_dir = fullfile(output_dir, 'ostt_SR_vs_IGf');
 
-            % Write significant clusters within whole-brain
-            write_significant_clusters(glm_dir, char(inference), [1, 2]);
+        run_ostt_and_write_clusters(conmap_dir, batch_dir, conmap_ix, con_name_pos, con_name_neg, glm_dir, opts, inference, anat_roi_mask);
 
-            % successful stop_{right} vs. ignore_{fast}
-            % -------------------------------------------------------------
+        % successful stop_{both} vs. ignore_{fast}
+        % -------------------------------------------------------------
 
-            conmap_ix = 2;
-            con_name_pos = 'successful stop_{right}';
-            con_name_neg = 'ignore_{fast}';
-            glm_dir = fullfile(output_dir, 'ostt_SR_vs_IGf');
+        conmap_ix = 3;
+        con_name_pos = 'successful stop_{both}';
+        con_name_neg = 'ignore_{fast}';
+        glm_dir = fullfile(output_dir, 'ostt_SB_vs_IGf');
 
-            % Run one-sample t-test
-            one_sample_ttest(conmap_dir, batch_dir, conmap_ix, con_name_pos, con_name_neg, glm_dir);
+        run_ostt_and_write_clusters(conmap_dir, batch_dir, conmap_ix, con_name_pos, con_name_neg, glm_dir, opts, inference, anat_roi_mask);
 
-            % Write significant clusters within anatomical ROIs
-            write_significant_clusters(glm_dir, char(inference), [1, 2], anat_roi_mask);
+        % successful stop_{left} vs. successful stop_{both}
+        % -------------------------------------------------------------
 
-            % Write significant clusters within whole-brain
-            write_significant_clusters(glm_dir, char(inference), [1, 2]);
+        conmap_ix = 4;
+        con_name_pos = 'successful stop_{left}';
+        con_name_neg = 'successful stop_{both}';
+        glm_dir = fullfile(output_dir, 'ostt_SL_vs_SB');
 
-            % successful stop_{both} vs. ignore_{fast}
-            % -------------------------------------------------------------
+        run_ostt_and_write_clusters(conmap_dir, batch_dir, conmap_ix, con_name_pos, con_name_neg, glm_dir, opts, inference, anat_roi_mask);
 
-            conmap_ix = 3;
-            con_name_pos = 'successful stop_{both}';
-            con_name_neg = 'ignore_{fast}';
-            glm_dir = fullfile(output_dir, 'ostt_SB_vs_IGf');
+        % successful stop_{right} vs. successful stop_{both}
+        % -------------------------------------------------------------
 
-            % Run one-sample t-test
-            one_sample_ttest(conmap_dir, batch_dir, conmap_ix, con_name_pos, con_name_neg, glm_dir);
+        conmap_ix = 5;
+        con_name_pos = 'successful stop_{right}';
+        con_name_neg = 'successful stop_{both}';
+        glm_dir = fullfile(output_dir, 'ostt_SR_vs_SB');
 
-            % Write significant clusters within anatomical ROIs
-            write_significant_clusters(glm_dir, char(inference), [1, 2], anat_roi_mask);
+        run_ostt_and_write_clusters(conmap_dir, batch_dir, conmap_ix, con_name_pos, con_name_neg, glm_dir, opts, inference, anat_roi_mask);
 
-            % Write significant clusters within whole-brain
-            write_significant_clusters(glm_dir, char(inference), [1, 2]);
+    case 'exploratory'
 
-            % successful stop_{left} vs. successful stop_{both}
-            % -------------------------------------------------------------
+        % successful stop_{left} vs. no-signal_{slow}
+        % -------------------------------------------------------------
 
-            conmap_ix = 4;
-            con_name_pos = 'successful stop_{left}';
-            con_name_neg = 'successful stop_{both}';
-            glm_dir = fullfile(output_dir, 'ostt_SL_vs_SB');
+        conmap_ix = 8;
+        con_name_pos = 'successful stop_{left}';
+        con_name_neg = 'no-signal_{slow}';
+        glm_dir = fullfile(output_dir, 'ostt_SL_vs_NSs');
 
-            % Run one-sample t-test
-            one_sample_ttest(conmap_dir, batch_dir, conmap_ix, con_name_pos, con_name_neg, glm_dir);
+        run_ostt_and_write_clusters(conmap_dir, batch_dir, conmap_ix, con_name_pos, con_name_neg, glm_dir, opts, inference, anat_roi_mask);
 
-            % Write significant clusters within anatomical ROIs
-            write_significant_clusters(glm_dir, char(inference), [1, 2], anat_roi_mask);
+        % successful stop_{right} vs. no-signal_{slow}
+        % -------------------------------------------------------------
 
-            % Write significant clusters within whole-brain
-            write_significant_clusters(glm_dir, char(inference), [1, 2]);
+        conmap_ix = 10;
+        con_name_pos = 'successful stop_{right}';
+        con_name_neg = 'no-signal_{slow}';
+        glm_dir = fullfile(output_dir, 'ostt_SR_vs_NSs');
 
-            % successful stop_{right} vs. successful stop_{both}
-            % -------------------------------------------------------------
+        run_ostt_and_write_clusters(conmap_dir, batch_dir, conmap_ix, con_name_pos, con_name_neg, glm_dir, opts, inference, anat_roi_mask);
 
-            conmap_ix = 5;
-            con_name_pos = 'successful stop_{right}';
-            con_name_neg = 'successful stop_{both}';
-            glm_dir = fullfile(output_dir, 'ostt_SR_vs_SB');
+        % successful stop_{both} vs. no-signal_{slow}
+        % -------------------------------------------------------------
 
-            % Run one-sample t-test
-            one_sample_ttest(conmap_dir, batch_dir, conmap_ix, con_name_pos, con_name_neg, glm_dir);
+        conmap_ix = 12;
+        con_name_pos = 'successful stop_{both}';
+        con_name_neg = 'no-signal_{slow}';
+        glm_dir = fullfile(output_dir, 'ostt_SB_vs_NSs');
 
-            % Write significant clusters within anatomical ROIs
-            write_significant_clusters(glm_dir, char(inference), [1, 2], anat_roi_mask);
+        run_ostt_and_write_clusters(conmap_dir, batch_dir, conmap_ix, con_name_pos, con_name_neg, glm_dir, opts, inference, anat_roi_mask);
 
-            % Write significant clusters within whole-brain
-            write_significant_clusters(glm_dir, char(inference), [1, 2]);
+        % successful stop_{left} vs. ignore_{slow}
+        % -------------------------------------------------------------
 
-        case 'exploratory'
+        conmap_ix = 22;
+        con_name_pos = 'successful stop_{left}';
+        con_name_neg = 'ignore_{slow}';
+        glm_dir = fullfile(output_dir, 'ostt_SL_vs_IGs');
 
-            % successful stop_{left} vs. no-signal_{slow}
-            % -------------------------------------------------------------
+        run_ostt_and_write_clusters(conmap_dir, batch_dir, conmap_ix, con_name_pos, con_name_neg, glm_dir, opts, inference, anat_roi_mask);
 
-            conmap_ix = 8;
-            con_name_pos = 'successful stop_{left}';
-            con_name_neg = 'no-signal_{slow}';
-            glm_dir = fullfile(output_dir, 'ostt_SL_vs_NSs');
+        % successful stop_{right} vs. ignore_{slow}
+        % -------------------------------------------------------------
 
-            % Run one-sample t-test
-            one_sample_ttest(conmap_dir, batch_dir, conmap_ix, con_name_pos, con_name_neg, glm_dir);
+        conmap_ix = 23;
+        con_name_pos = 'successful stop_{right}';
+        con_name_neg = 'ignore_{slow}';
+        glm_dir = fullfile(output_dir, 'ostt_SR_vs_IGs');
 
-            % Write significant clusters within anatomical ROIs
-            write_significant_clusters(glm_dir, char(inference), [1, 2], anat_roi_mask);
+        run_ostt_and_write_clusters(conmap_dir, batch_dir, conmap_ix, con_name_pos, con_name_neg, glm_dir, opts, inference, anat_roi_mask);
 
-            % Write significant clusters within whole-brain
-            write_significant_clusters(glm_dir, char(inference), [1, 2]);
+        % successful stop_{both} vs. ignore_{slow}
+        % -------------------------------------------------------------
 
-            % successful stop_{right} vs. no-signal_{slow}
-            % -------------------------------------------------------------
+        conmap_ix = 24;
+        con_name_pos = 'successful stop_{both}';
+        con_name_neg = 'ignore_{slow}';
+        glm_dir = fullfile(output_dir, 'ostt_SB_vs_IGs');
 
-            conmap_ix = 10;
-            con_name_pos = 'successful stop_{right}';
-            con_name_neg = 'no-signal_{slow}';
-            glm_dir = fullfile(output_dir, 'ostt_SR_vs_NSs');
+        run_ostt_and_write_clusters(conmap_dir, batch_dir, conmap_ix, con_name_pos, con_name_neg, glm_dir, opts, inference, anat_roi_mask);
 
-            one_sample_ttest(conmap_dir, batch_dir, conmap_ix, con_name_pos, con_name_neg, glm_dir);
+        % successful ignore_{slow} vs. no-signal_{slow}
+        % -------------------------------------------------------------
 
-            % Write significant clusters within anatomical ROIs
-            write_significant_clusters(glm_dir, char(inference), [1, 2], anat_roi_mask);
+        conmap_ix = 26;
+        con_name_pos = 'ignore_{slow}';
+        con_name_neg = 'no-signal_{slow}';
+        glm_dir = fullfile(output_dir, 'ostt_IGs_vs_NSs');
 
-            % Write significant clusters within whole-brain
-            write_significant_clusters(glm_dir, char(inference), [1, 2]);
-
-            % successful stop_{both} vs. no-signal_{slow}
-            % -------------------------------------------------------------
-
-            conmap_ix = 12;
-            con_name_pos = 'successful stop_{both}';
-            con_name_neg = 'no-signal_{slow}';
-            glm_dir = fullfile(output_dir, 'ostt_SB_vs_NSs');
-
-            one_sample_ttest(conmap_dir, batch_dir, conmap_ix, con_name_pos, con_name_neg, glm_dir);
-
-            % Write significant clusters within anatomical ROIs
-            write_significant_clusters(glm_dir, char(inference), [1, 2], anat_roi_mask);
-
-            % Write significant clusters within whole-brain
-            write_significant_clusters(glm_dir, char(inference), [1, 2]);
-
-            % successful stop_{left} vs. ignore_{slow}
-            % -------------------------------------------------------------
-
-            conmap_ix = 22;
-            con_name_pos = 'successful stop_{left}';
-            con_name_neg = 'ignore_{slow}';
-            glm_dir = fullfile(output_dir, 'ostt_SL_vs_IGs');
-
-            % Run one-sample t-test
-            one_sample_ttest(conmap_dir, batch_dir, conmap_ix, con_name_pos, con_name_neg, glm_dir);
-
-            % Write significant clusters within anatomical ROIs
-            write_significant_clusters(glm_dir, char(inference), [1, 2], anat_roi_mask);
-
-            % Write significant clusters within whole-brain
-            write_significant_clusters(glm_dir, char(inference), [1, 2]);
-
-            % successful stop_{right} vs. ignore_{slow}
-            % -------------------------------------------------------------
-
-            conmap_ix = 23;
-            con_name_pos = 'successful stop_{right}';
-            con_name_neg = 'ignore_{slow}';
-            glm_dir = fullfile(output_dir, 'ostt_SR_vs_IGs');
-
-            % Run one-sample t-test
-            one_sample_ttest(conmap_dir, batch_dir, conmap_ix, con_name_pos, con_name_neg, glm_dir);
-
-            % Write significant clusters within anatomical ROIs
-            write_significant_clusters(glm_dir, char(inference), [1, 2], anat_roi_mask);
-
-            % Write significant clusters within whole-brain
-            write_significant_clusters(glm_dir, char(inference), [1, 2]);
-
-            % successful stop_{both} vs. ignore_{slow}
-            % -------------------------------------------------------------
-
-            conmap_ix = 24;
-            con_name_pos = 'successful stop_{both}';
-            con_name_neg = 'ignore_{slow}';
-            glm_dir = fullfile(output_dir, 'ostt_SB_vs_IGs');
-
-            % Run one-sample t-test
-            one_sample_ttest(conmap_dir, batch_dir, conmap_ix, con_name_pos, con_name_neg, glm_dir);
-
-            % Write significant clusters within anatomical ROIs
-            write_significant_clusters(glm_dir, char(inference), [1, 2], anat_roi_mask);
-
-            % Write significant clusters within whole-brain
-            write_significant_clusters(glm_dir, char(inference), [1, 2]);
-
-            % successful ignore_{slow} vs. no-signal_{slow}
-            % -------------------------------------------------------------
-
-            conmap_ix = 26;
-            con_name_pos = 'ignore_{slow}';
-            con_name_neg = 'no-signal_{slow}';
-            glm_dir = fullfile(output_dir, 'ostt_IGs_vs_NSs');
-
-            one_sample_ttest(conmap_dir, batch_dir, conmap_ix, con_name_pos, con_name_neg, glm_dir);
-
-            % Write significant clusters within anatomical ROIs
-            write_significant_clusters(glm_dir, char(inference), [1, 2], anat_roi_mask);
-
-            % Write significant clusters within whole-brain
-            write_significant_clusters(glm_dir, char(inference), [1, 2]);
-
-    end
+        run_ostt_and_write_clusters(conmap_dir, batch_dir, conmap_ix, con_name_pos, con_name_neg, glm_dir, opts, inference, anat_roi_mask);
 
 end
 
 
 % Make conjunction maps
 % =========================================================================
-
-if opts.do_conj_maps
     
-    % Make directory, if needed, for saving conjunction maps
-    conjmap_dir     = fullfile(output_dir,'conjunction_maps');
+% Make directory, if needed, for saving conjunction maps
+conjmap_dir     = fullfile(output_dir,'conjunction_maps');
 
-    if ~exist(conjmap_dir, 'dir')
-        mkdir(conjmap_dir);
-    end
-        
-    switch lower(analysis_type)
+if ~exist(conjmap_dir, 'dir')
+    mkdir(conjmap_dir);
+end
 
-        case 'planned'
+switch lower(analysis_type)
 
-            % SL vs. IGf AND SR vs. IGf
-            % -------------------------------------------------------------
+    case 'planned'
 
-            ostt_dirs = cellstr(char(fullfile(output_dir, 'ostt_SL_vs_IGf'), ...
-                                     fullfile(output_dir, 'ostt_SR_vs_IGf')));
-            conjmap_name    = 'SLvsIGf_AND_SRvsIGf';
+        % SL vs. IGf AND SR vs. IGf
+        % -------------------------------------------------------------
 
-            % Make conjunction maps for anatomical ROIs (roi_mask = true)
-            make_conjunction_maps(ostt_dirs, conjmap_dir, conjmap_name, char(inference), true);
+        ostt_dirs = cellstr(char(fullfile(output_dir, 'ostt_SL_vs_IGf'), ...
+                                 fullfile(output_dir, 'ostt_SR_vs_IGf')));
+        conjmap_name    = 'SLvsIGf_AND_SRvsIGf';
 
-            % Make conjunction maps for whole-brain results (roi_mask = false)
-            make_conjunction_maps(ostt_dirs, conjmap_dir, conjmap_name, char(inference), false);
+        % Make conjunction maps for anatomical ROIs (roi_mask = true)
+        make_conjunction_maps(ostt_dirs, conjmap_dir, conjmap_name, char(inference), true);
 
-            % SL vs. IGf AND SR vs. IGf AND SB vs. IGf
-            % -------------------------------------------------------------
+        % Make conjunction maps for whole-brain results (roi_mask = false)
+        make_conjunction_maps(ostt_dirs, conjmap_dir, conjmap_name, char(inference), false);
 
-            ostt_dirs = cellstr(char(fullfile(output_dir, 'ostt_SL_vs_IGf'), ...
-                                     fullfile(output_dir, 'ostt_SR_vs_IGf'), ...
-                                     fullfile(output_dir, 'ostt_SB_vs_IGf')));
-            conjmap_name    = 'SLvsIGf_AND_SRvsIGf_AND_SBvsIGf';
+        % SL vs. IGf AND SR vs. IGf AND SB vs. IGf
+        % -------------------------------------------------------------
 
-            % Make conjunction maps for anatomical ROIs (roi_mask = true)
-            make_conjunction_maps(ostt_dirs, conjmap_dir, conjmap_name, char(inference), true);
+        ostt_dirs = cellstr(char(fullfile(output_dir, 'ostt_SL_vs_IGf'), ...
+                                 fullfile(output_dir, 'ostt_SR_vs_IGf'), ...
+                                 fullfile(output_dir, 'ostt_SB_vs_IGf')));
+        conjmap_name    = 'SLvsIGf_AND_SRvsIGf_AND_SBvsIGf';
 
-            % Make conjunction maps for whole-brain results (roi_mask = false)
-            make_conjunction_maps(ostt_dirs, conjmap_dir, conjmap_name, char(inference), false);
+        % Make conjunction maps for anatomical ROIs (roi_mask = true)
+        make_conjunction_maps(ostt_dirs, conjmap_dir, conjmap_name, char(inference), true);
 
-            % SL vs. SB AND SR vs. SB
-            % -------------------------------------------------------------
+        % Make conjunction maps for whole-brain results (roi_mask = false)
+        make_conjunction_maps(ostt_dirs, conjmap_dir, conjmap_name, char(inference), false);
 
-            ostt_dirs = cellstr(char(fullfile(output_dir, 'ostt_SL_vs_SB'), ...
-                                     fullfile(output_dir, 'ostt_SR_vs_SB')));
-            conjmap_name    = 'SLvsSB_AND_SRvsSB';
+        % SL vs. SB AND SR vs. SB
+        % -------------------------------------------------------------
 
-            % Make conjunction maps for anatomical ROIs (roi_mask = true)
-            make_conjunction_maps(ostt_dirs, conjmap_dir, conjmap_name, char(inference), true);
+        ostt_dirs = cellstr(char(fullfile(output_dir, 'ostt_SL_vs_SB'), ...
+                                 fullfile(output_dir, 'ostt_SR_vs_SB')));
+        conjmap_name    = 'SLvsSB_AND_SRvsSB';
 
-            % Make conjunction maps for whole-brain results (roi_mask = false)
-            make_conjunction_maps(ostt_dirs, conjmap_dir, conjmap_name, char(inference), false);
+        % Make conjunction maps for anatomical ROIs (roi_mask = true)
+        make_conjunction_maps(ostt_dirs, conjmap_dir, conjmap_name, char(inference), true);
 
-        case 'exploratory'
+        % Make conjunction maps for whole-brain results (roi_mask = false)
+        make_conjunction_maps(ostt_dirs, conjmap_dir, conjmap_name, char(inference), false);
 
-            % SL vs. SB AND SR vs. SB AND SL vs. IGf AND SR vs. IGf 
-            % -------------------------------------------------------------
+    case 'exploratory'
 
-            ostt_dirs = cellstr(char(fullfile(output_dir, 'ostt_SL_vs_SB'), ...
-                                     fullfile(output_dir, 'ostt_SR_vs_SB'), ...
-                                     fullfile(output_dir, 'ostt_SL_vs_IGf'), ...
-                                     fullfile(output_dir, 'ostt_SR_vs_IGf')));
-            conjmap_name    = 'SLvsSB_AND_SRvsSB_AND_SLvsIGf_AND_SRvsIGf';
+        % SL vs. SB AND SR vs. SB AND SL vs. IGf AND SR vs. IGf 
+        % -------------------------------------------------------------
 
-            % Make conjunction maps for anatomical ROIs (roi_mask = true)
-            make_conjunction_maps(ostt_dirs, conjmap_dir, conjmap_name, char(inference), true);
+        ostt_dirs = cellstr(char(fullfile(output_dir_planned, 'ostt_SL_vs_SB'), ...
+                                 fullfile(output_dir_planned, 'ostt_SR_vs_SB'), ...
+                                 fullfile(output_dir_planned, 'ostt_SL_vs_IGf'), ...
+                                 fullfile(output_dir_planned, 'ostt_SR_vs_IGf')));
+        conjmap_name    = 'SLvsSB_AND_SRvsSB_AND_SLvsIGf_AND_SRvsIGf';
 
-            % Make conjunction maps for whole-brain results (roi_mask = false)
-            make_conjunction_maps(ostt_dirs, conjmap_dir, conjmap_name, char(inference), false);
+        % Make conjunction maps for anatomical ROIs (roi_mask = true)
+        make_conjunction_maps(ostt_dirs, conjmap_dir, conjmap_name, char(inference), true);
 
-            % SL vs. NS AND SR vs. NS
-            % -------------------------------------------------------------
+        % Make conjunction maps for whole-brain results (roi_mask = false)
+        make_conjunction_maps(ostt_dirs, conjmap_dir, conjmap_name, char(inference), false);
 
-            ostt_dirs = cellstr(char(fullfile(output_dir, 'ostt_SL_vs_NSs'), ...
-                                     fullfile(output_dir, 'ostt_SR_vs_NSs')));
-            conjmap_name    = 'SLvsNSs_AND_SRvsNSs';
+        % SL vs. NS AND SR vs. NS
+        % -------------------------------------------------------------
 
-            % Make conjunction maps for anatomical ROIs (roi_mask = true)
-            make_conjunction_maps(ostt_dirs, conjmap_dir, conjmap_name, char(inference), true);
+        ostt_dirs = cellstr(char(fullfile(output_dir, 'ostt_SL_vs_NSs'), ...
+                                 fullfile(output_dir, 'ostt_SR_vs_NSs')));
+        conjmap_name    = 'SLvsNSs_AND_SRvsNSs';
 
-            % Make conjunction maps for whole-brain results (roi_mask = false)
-            make_conjunction_maps(ostt_dirs, conjmap_dir, conjmap_name, char(inference), false);
+        % Make conjunction maps for anatomical ROIs (roi_mask = true)
+        make_conjunction_maps(ostt_dirs, conjmap_dir, conjmap_name, char(inference), true);
 
-            % SL vs. NS AND SR vs. NS AND SB vs. NS
-            % -------------------------------------------------------------
+        % Make conjunction maps for whole-brain results (roi_mask = false)
+        make_conjunction_maps(ostt_dirs, conjmap_dir, conjmap_name, char(inference), false);
 
-            ostt_dirs = cellstr(char(fullfile(output_dir, 'ostt_SL_vs_NSs'), ...
-                                     fullfile(output_dir, 'ostt_SR_vs_NSs'), ...
-                                     fullfile(output_dir, 'ostt_SB_vs_NSs')));
-            conjmap_name    = 'SLvsNSs_AND_SRvsNSs_AND_SBvsNSs';
+        % SL vs. NS AND SR vs. NS AND SB vs. NS
+        % -------------------------------------------------------------
 
-            % Make conjunction maps for anatomical ROIs (roi_mask = true)
-            make_conjunction_maps(ostt_dirs, conjmap_dir, conjmap_name, char(inference), true);
+        ostt_dirs = cellstr(char(fullfile(output_dir, 'ostt_SL_vs_NSs'), ...
+                                 fullfile(output_dir, 'ostt_SR_vs_NSs'), ...
+                                 fullfile(output_dir, 'ostt_SB_vs_NSs')));
+        conjmap_name    = 'SLvsNSs_AND_SRvsNSs_AND_SBvsNSs';
 
-            % Make conjunction maps for whole-brain results (roi_mask = false)
-            make_conjunction_maps(ostt_dirs, conjmap_dir, conjmap_name, char(inference), false);
+        % Make conjunction maps for anatomical ROIs (roi_mask = true)
+        make_conjunction_maps(ostt_dirs, conjmap_dir, conjmap_name, char(inference), true);
 
-            % SL vs. IGs AND SR vs. IGs AND SB vs. IGs
-            % -------------------------------------------------------------
+        % Make conjunction maps for whole-brain results (roi_mask = false)
+        make_conjunction_maps(ostt_dirs, conjmap_dir, conjmap_name, char(inference), false);
 
-            ostt_dirs = cellstr(char(fullfile(output_dir, 'ostt_SL_vs_IGs'), ...
-                                     fullfile(output_dir, 'ostt_SR_vs_IGs'), ...
-                                     fullfile(output_dir, 'ostt_SB_vs_IGs')));
-            conjmap_name    = 'SLvsIGs_AND_SRvsIGs_AND_SBvsIGs';
+        % SL vs. IGs AND SR vs. IGs AND SB vs. IGs
+        % -------------------------------------------------------------
 
-            % Make conjunction maps for anatomical ROIs (roi_mask = true)
-            make_conjunction_maps(ostt_dirs, conjmap_dir, conjmap_name, char(inference), true);
+        ostt_dirs = cellstr(char(fullfile(output_dir, 'ostt_SL_vs_IGs'), ...
+                                 fullfile(output_dir, 'ostt_SR_vs_IGs'), ...
+                                 fullfile(output_dir, 'ostt_SB_vs_IGs')));
+        conjmap_name    = 'SLvsIGs_AND_SRvsIGs_AND_SBvsIGs';
 
-            % Make conjunction maps for whole-brain results (roi_mask = false)
-            make_conjunction_maps(ostt_dirs, conjmap_dir, conjmap_name, char(inference), false);
+        % Make conjunction maps for anatomical ROIs (roi_mask = true)
+        make_conjunction_maps(ostt_dirs, conjmap_dir, conjmap_name, char(inference), true);
 
-            % SL vs. SB AND SR vs. SB AND SL vs. IGs AND SR vs. IGs 
-            % -------------------------------------------------------------
+        % Make conjunction maps for whole-brain results (roi_mask = false)
+        make_conjunction_maps(ostt_dirs, conjmap_dir, conjmap_name, char(inference), false);
 
-            ostt_dirs = cellstr(char(fullfile(output_dir, 'ostt_SL_vs_SB'), ...
-                                     fullfile(output_dir, 'ostt_SR_vs_SB'), ...
-                                     fullfile(output_dir, 'ostt_SL_vs_IGs'), ...
-                                     fullfile(output_dir, 'ostt_SR_vs_IGs')));
-            conjmap_name    = 'SLvsSB_AND_SRvsSB_AND_SLvsIGs_AND_SRvsIGs';
+        % SL vs. SB AND SR vs. SB AND SL vs. IGs AND SR vs. IGs 
+        % -------------------------------------------------------------
 
-            % Make conjunction maps for anatomical ROIs (roi_mask = true)
-            make_conjunction_maps(ostt_dirs, conjmap_dir, conjmap_name, char(inference), true);
+        ostt_dirs = cellstr(char(fullfile(output_dir_planned, 'ostt_SL_vs_SB'), ...
+                                 fullfile(output_dir_planned, 'ostt_SR_vs_SB'), ...
+                                 fullfile(output_dir, 'ostt_SL_vs_IGs'), ...
+                                 fullfile(output_dir, 'ostt_SR_vs_IGs')));
+        conjmap_name    = 'SLvsSB_AND_SRvsSB_AND_SLvsIGs_AND_SRvsIGs';
 
-            % Make conjunction maps for whole-brain results (roi_mask = false)
-            make_conjunction_maps(ostt_dirs, conjmap_dir, conjmap_name, char(inference), false);
+        % Make conjunction maps for anatomical ROIs (roi_mask = true)
+        make_conjunction_maps(ostt_dirs, conjmap_dir, conjmap_name, char(inference), true);
 
-    end
+        % Make conjunction maps for whole-brain results (roi_mask = false)
+        make_conjunction_maps(ostt_dirs, conjmap_dir, conjmap_name, char(inference), false);
 
 end
 
@@ -597,7 +507,7 @@ if opts.do_dual_coded_imgs
             % IGf constraint
             % -------------------------------------------------------------
 
-            glm_dir = fullfile(output_dir, 'ostt_SL_vs_SB');
+            glm_dir = fullfile(output_dir_planned, 'ostt_SL_vs_SB');
 
             switch char(inference)
                 case 'cluster'
@@ -626,7 +536,7 @@ if opts.do_dual_coded_imgs
             % IGf constraint
             % -------------------------------------------------------------------------
 
-            glm_dir = fullfile(output_dir, 'ostt_SR_vs_SB');
+            glm_dir = fullfile(output_dir_planned, 'ostt_SR_vs_SB');
 
             switch char(inference)
                 case 'cluster'
@@ -828,7 +738,7 @@ if opts.do_dual_coded_imgs
             % IGs constraint
             % -------------------------------------------------------------
 
-            glm_dir = fullfile(output_dir, 'ostt_SL_vs_SB');
+            glm_dir = fullfile(output_dir_planned, 'ostt_SL_vs_SB');
 
             switch char(inference)
                 case 'cluster'
@@ -857,7 +767,7 @@ if opts.do_dual_coded_imgs
             % IGs constraint
             % -------------------------------------------------------------
 
-            glm_dir = fullfile(output_dir, 'ostt_SR_vs_SB');
+            glm_dir = fullfile(output_dir_planned, 'ostt_SR_vs_SB');
 
             switch char(inference)
                 case 'cluster'
