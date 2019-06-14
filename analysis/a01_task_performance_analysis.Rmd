@@ -1,0 +1,697 @@
+---
+params:  
+  title: "a01_task_performance_analysis"
+title: '`r stringr::str_to_title(stringr::str_replace_all(params$title, pattern = "_", replacement = " "))`'
+author: "Bram B. Zandbelt"
+date: "`r format(Sys.Date(), '%B %d, %Y')`"
+output:
+  html_document:
+    toc: true
+    toc_float: true 
+    number_sections: true
+    depth: 4
+    df_print: paged
+    theme: readable
+    highlight: pygments
+---
+
+```{r setup, include=FALSE}
+knitr::opts_knit$set(root.dir = rprojroot::find_root(rprojroot::has_file("DESCRIPTION")))
+knitr::opts_knit$set(eval.after = 'fig.cap')
+
+require(tidyverse)
+require(BayesFactor)
+require(brms)
+
+# This is a workaround for a recent problem with devtools::install_github 
+# (see: https://github.com/r-lib/devtools/issues/2029)
+# packrat::extlib("irmass")
+```
+
+# Overview
+This notebook contains the planned analyses comparing task performance between action- and stimulus-selective stopping (analyses 8 and 9 of the pre-registration document). It also contains some analyses describing the data that were analyzed in terms of plots and summary statistics.
+
+# Preliminaries
+
+Specification of:
+
+```{r Define notebook name, based on YAML header}
+notebook_name <- 
+   stringr::str_to_lower(stringr::str_replace_all(params$title, " ", "_"))
+```
+- the _name of the notebook (`notebook_name`)_, which is used to save output to a notebook-specific directory
+
+```{r Define relevant directories for reading and writing data and create whenever needed}
+
+performance_data_dir <- 
+  file.path("data","performance")
+
+# Derivatives will be written here
+performance_output_data_dir <- 
+  file.path("data","derivatives", notebook_name)
+
+# Figures will be written here
+figures_dir <- 
+  file.path("figures", notebook_name)
+
+irmass::verify_output_dirs(base_dirs = list(dirname(performance_output_data_dir), 
+                                            dirname(figures_dir)),
+                           notebook_name = notebook_name)
+```
+- all _relevant directories_ for reading and writing data
+
+```{r Set seed of random number generator}
+set.seed(19821101)
+```
+- set seed to be able to reproduce results
+
+# Read data
+
+The data that are read have already been preprocessed as part of the `irmass` (independent race model analysis of selective stopping) part of this project.
+
+
+```{r Read data}
+# Read resp data for descriptive statistics plots ------------------------------
+# Data origin: irmass notebook `assess_task_performance_criteria`
+
+resp_data_dsc_fl <- 
+  file.path(performance_data_dir,
+            "tidy_expt_trial_resp_data_for_analysis.csv")
+
+resp_data_dsc <- 
+  cnmss::read_performance_data(resp_data_dsc_fl, 
+                               data_type = "resp",
+                               stat_type = "descriptive")
+
+# Read response time data for descriptive statistics plots ---------------------
+# Data origin: irmass notebook `assess_task_performance_criteria`
+
+rt_data_dsc_fl <- 
+  file.path(performance_data_dir,
+            "tidy_expt_trial_rt_data_for_analysis.csv")
+
+rt_data_dsc <- 
+  cnmss::read_performance_data(rt_data_dsc_fl, 
+                               data_type = "rt",
+                               stat_type = "descriptive")
+
+# Read resp data for (inferential) statistical analysis ------------------------
+# Data origin: irmass notebook `individual_analysis_effect_ssd_on_prob_responding_given_stopsignal`
+
+resp_data_inf_fl_sas <- 
+  file.path(performance_data_dir,
+            "analysis_inputs_03_individual_analysis_effect_ssd_on_prob_responding_given_stopsignal_action_selective_stopping_resp_data.csv")
+  
+resp_data_inf_fl_sss <- 
+  file.path(performance_data_dir,
+            "analysis_inputs_03_individual_analysis_effect_ssd_on_prob_responding_given_stopsignal_stimulus_selective_stopping_resp_data.csv")
+
+resp_data_inf <- 
+  dplyr::bind_rows(cnmss::read_performance_data(resp_data_inf_fl_sas, 
+                                                data_type = "resp",
+                                                stat_type = "inferential"),
+                   cnmss::read_performance_data(resp_data_inf_fl_sss, 
+                                                data_type = "resp",
+                                                stat_type = "inferential")
+  )
+  
+# Read response time data for (inferential) statistical analysis ---------------
+# Data origin: irmass notebook `group_analysis_effect_ssd_on_stoprespond_rt`
+
+rt_data_inf_fl_sas <- 
+  file.path(performance_data_dir,
+            "analysis_inputs_08_group_analysis_effect_ssd_on_stoprespond_rt_action_selective_stopping_rt_data.csv")
+rt_data_inf_fl_sss <- 
+  file.path(performance_data_dir,
+            "analysis_inputs_08_group_analysis_effect_ssd_on_stoprespond_rt_stimulus_selective_stopping_rt_data.csv")
+
+rt_data_inf_sas <-
+  cnmss::read_performance_data(rt_data_inf_fl_sas,
+                               data_type = "rt",
+                               stat_type = "inferential") %>%
+  dplyr::mutate(trial_alt = "SAS")
+
+rt_data_inf_sss <-
+  cnmss::read_performance_data(rt_data_inf_fl_sss,
+                               data_type = "rt",
+                               stat_type = "inferential") %>%
+  dplyr::mutate(trial_alt = "SSS")
+
+rt_data_inf <-
+  dplyr::bind_rows(rt_data_inf_sas, rt_data_inf_sss)
+```
+
+# Preprocess data
+
+Preprocess data for descriptive plots
+
+```{r Preprocess data for descriptive plots}
+
+# Merge resp and RT data
+tidy_resp_rt_data_dsc <- 
+  dplyr::left_join(
+    resp_data_dsc, rt_data_dsc,
+    by = c("subjectIx", "blockIx", "trialIx", "trial", "trial_alt", "r", "t_d")) %>%
+  dplyr::mutate(
+    r_type = 
+      forcats::fct_recode(
+        .$r,
+        bimanual = "RB",
+        bimanual = "RBO",
+        unimanual = "RL",
+        unimanual = "RR",
+        unimanual = "RLO",
+        unimanual = "RRO",
+        no = "NR",
+        other = "NOC"),
+    trial = 
+      forcats::fct_recode(
+        .$trial,
+        "no-signal" = "NS", 
+        "stop-left" = "SL",
+        "stop-right" = "SR",
+        "stop-both" = "SB",
+        "ignore" = "IG"),
+    accuracy = 
+      ifelse(
+        trialCorrect,
+        "correct",
+        "error")
+  ) %>%
+  dplyr::filter(r_type %in% c("bimanual", "unimanual", "no"))
+
+# Compute proportions of response type and accuracy per trial
+tidy_resp_data_dsc <- 
+  dplyr::left_join(tidy_resp_rt_data_dsc %>% 
+                     dplyr::group_by(subjectIx, trial, t_d, r_type, accuracy) %>% 
+                     dplyr::summarize(n = n()) %>%
+                     dplyr::ungroup() %>%
+                     tidyr::replace_na(list(accuracy = "error")) %>%
+                     tidyr::complete(subjectIx, trial, t_d, r_type, accuracy, fill = list(n = 0)),
+                   tidy_resp_rt_data_dsc %>%
+                     dplyr::group_by(subjectIx, trial, t_d) %>% 
+                     dplyr::summarize(n_trial_t_d = n()) %>%
+                     dplyr::ungroup() %>%
+                     tidyr::replace_na(list(accuracy = "error")) %>%
+                     tidyr::complete(subjectIx, trial, t_d, fill = list(n = 0)), 
+                   by = c("subjectIx", "trial", "t_d")) %>%
+  dplyr::mutate(prop = n / n_trial_t_d)
+```
+
+Preprocess data for inferential statistical analysis
+
+```{r Preprocess data fro inferential statistical analysis}
+
+tidy_resp_data_inf <- 
+  resp_data_inf %>%
+  # Code bimanual response variable as double for modeling purposes and subjectIx as factor
+  dplyr::mutate(resp = as.double(r_bi),
+                subjectIx = factor(subjectIx)) %>%
+  dplyr::select(-r_bi) 
+
+# Unique values of scaled t_d will be used later for plotting
+unique_tds <- c(0.066, 0.166, 0.266, 0.366, 0.466)
+
+tidy_rt_data_inf <- 
+  rt_data_inf %>%
+  dplyr::mutate(trial_alt = factor(.$trial_alt,
+                                   levels = c("SAS", "SSS")),
+                subjectIx = factor(subjectIx))
+
+# Compute P (r, bi | stop type, t_d) for plotting purposes
+tidy_resp_data_inf_grp <- 
+  tidy_resp_data_inf %>% 
+  dplyr::group_by(subjectIx, t_d, trial_alt) %>% 
+  dplyr::summarize(p_r_bi = mean(resp))
+
+```
+
+# Analyze data
+
+## Descriptive statistics
+
+Compute summary statistics for response proportions and response times
+```{r Compute summary statistics}
+
+# Response type and accuracy proportions, per t_d
+summary_stats_resp_t_d <- 
+  tidy_resp_data_dsc %>%
+  dplyr::group_by(trial, t_d, r_type, accuracy) %>%
+  dplyr::summarize(mean = mean(prop, na.rm = TRUE),
+                   md = median(prop, na.rm = TRUE),
+                   P_25 = quantile(prop, probs = .25, na.rm = TRUE),
+                   P_75 = quantile(prop, probs = .75, na.rm = TRUE),
+                   IQR = IQR(prop, na.rm = TRUE),
+                   sd = sd(prop, na.rm = TRUE),
+                   min = min(prop, na.rm = TRUE),
+                   max = max(prop, na.rm = TRUE))
+
+# Response type and accuracy proportions, collapsed across t_d levels
+summary_stats_resp <- 
+  tidy_resp_data_dsc %>%
+  dplyr::group_by(trial, r_type, accuracy) %>%
+  dplyr::summarize(sum_n = sum(n),
+                   sum_n_trial_t_d = sum(n_trial_t_d),
+                   prop = sum_n / sum_n_trial_t_d) %>%
+  dplyr::ungroup() %>%
+  dplyr::group_by(trial) %>%
+  dplyr::summarize(mean = mean(prop, na.rm = TRUE),
+                   md = median(prop, na.rm = TRUE),
+                   P_25 = quantile(prop, probs = .25, na.rm = TRUE),
+                   P_75 = quantile(prop, probs = .75, na.rm = TRUE),
+                   IQR = IQR(prop, na.rm = TRUE),
+                   sd = sd(prop, na.rm = TRUE),
+                   min = min(prop, na.rm = TRUE),
+                   max = max(prop, na.rm = TRUE))
+
+# Response times
+summary_stats_rt <- 
+  tidy_resp_rt_data_dsc %>%
+  dplyr::filter(r_type != "no") %>% # Can't summarize response times if no response was made
+  dplyr::group_by(trial, accuracy, r_type) %>%
+  dplyr::summarize(mean = mean(RT_trial, na.rm = TRUE),
+                   md = median(RT_trial, na.rm = TRUE),
+                   P_25 = quantile(RT_trial, probs = .25, na.rm = TRUE),
+                   P_75 = quantile(RT_trial, probs = .75, na.rm = TRUE),
+                   IQR = IQR(RT_trial, na.rm = TRUE),
+                   sd = sd(RT_trial, na.rm = TRUE),
+                   min = min(RT_trial, na.rm = TRUE),
+                   max = max(RT_trial, na.rm = TRUE))
+
+```
+
+## Inferential statistics
+
+### Bayesian logistic regression of $P_{r,bi}$
+
+This is Analysis 8 of the pre-registration document.
+
+```{r Specify model priors}
+# We use a Cauchy prior, with scaling parameter of 0.5 (see preregistration)
+model_priors <- 
+  c(set_prior("cauchy(0, 0.5)", class = 'Intercept'),
+    set_prior("cauchy(0, 0.5)", class = 'b'))
+```
+
+#### Null model
+
+Fit model
+
+```{r Fit null model containing random effects only}
+# See also Richard Morey's BayesFactor package documentation:
+# "The null model in a test with random factors is not the intercept-only model; it is the model containing the random effects."
+
+m_0 <- 
+  brms::brm(
+    resp ~ (1 + subjectIx),
+    data = tidy_resp_data_inf,
+    prior = model_priors,
+    family = "bernoulli",
+    seed = 123,
+    sample_prior = TRUE,
+    save_all_pars = TRUE,
+    save_model = file.path(performance_output_data_dir, "stan_model_code_p_r_bi_m_0.txt"),
+    file = file.path(performance_output_data_dir, "fitted_model_object_p_r_bi_m_0")
+  )
+```
+
+Plot model diagnostics
+```{r Show traceplot and Rhat for m_0}
+irmass::plot_mcmc_analysis(m_0)
+```
+
+```{r Plot posterior densities of m_0}
+irmass::plot_posterior(m_0)
+```
+
+#### Model of main effect of t_d (stop-signal delay)
+
+Fit model
+
+```{r Fit main effect of td model}
+m_td <- 
+  brms::brm(
+    resp ~ t_d + (1 + subjectIx),
+    data = tidy_resp_data_inf,
+    prior = model_priors,
+    family = "bernoulli",
+    seed = 123,
+    sample_prior = TRUE,
+    save_all_pars = TRUE,
+    save_model = file.path(performance_output_data_dir, "stan_model_code_p_r_bi_m_td.txt"),
+    file = file.path(performance_output_data_dir, "fitted_model_object_p_r_bi_m_td")
+  )
+```
+
+Plot model diagnostics
+```{r Show traceplot and Rhat for m_td}
+irmass::plot_mcmc_analysis(m_td)
+```
+
+```{r Plot posterior densities of m_td}
+irmass::plot_posterior(m_td)
+```
+
+
+#### Model main effect of stoptype (action- vs stimulus-selective stopping)
+
+Fit model
+
+```{r Fit main effect of stoptype model}
+m_stoptype <- 
+  brms::brm(
+    resp ~ trial_alt + (1 + subjectIx),
+    data = tidy_resp_data_inf,
+    prior = model_priors,
+    family = "bernoulli",
+    seed = 123,
+    sample_prior = TRUE,
+    save_all_pars = TRUE,
+    save_model = file.path(performance_output_data_dir, "stan_model_code_p_r_bi_m_stoptype.txt"),
+    file = file.path(performance_output_data_dir, "fitted_model_object_p_r_bi_m_stoptype")
+  )
+```
+
+Plot model diagnostics
+```{r Show traceplot and Rhat for m_stoptype}
+irmass::plot_mcmc_analysis(m_stoptype)
+```
+
+```{r Plot posterior densities of m_stoptype}
+irmass::plot_posterior(m_stoptype)
+```
+
+#### Model main effects of t_d (stop-signal delay) and stoptype (action- vs stimulus-selective stopping)
+
+Fit model
+
+```{r Fit main effect of td and stoptype model}
+m_td_stoptype <- 
+  brms::brm(
+    resp ~ t_d + trial_alt + (1 + subjectIx),
+    data = tidy_resp_data_inf,
+    prior = model_priors,
+    family = "bernoulli",
+    seed = 123,
+    sample_prior = TRUE,
+    save_all_pars = TRUE,
+    save_model = file.path(performance_output_data_dir, "stan_model_code_p_r_bi_m_td_stoptype.txt"),
+    file = file.path(performance_output_data_dir, "fitted_model_object_p_r_bi_m_td_stoptype")
+  )
+```
+
+Plot model diagnostics
+```{r Show traceplot and Rhat for m_td_stoptype}
+irmass::plot_mcmc_analysis(m_td_stoptype)
+```
+
+```{r Plot posterior densities of m_td_stoptype}
+irmass::plot_posterior(m_td_stoptype)
+```
+
+#### Full model main effects of t_d (stop-signal delay) and stoptype (action- vs stimulus-selective stopping) and their interaction
+
+Fit model
+```{r Fit full model containing main effects and interaction between td and stoptype}
+m_full <- 
+  brms::brm(
+    resp ~ t_d*trial_alt + (1 + subjectIx),
+    data = tidy_resp_data_inf,
+    prior = model_priors,
+    family = "bernoulli",
+    seed = 123,
+    sample_prior = TRUE,
+    save_all_pars = TRUE,
+    save_model = file.path(performance_output_data_dir, "stan_model_code_p_r_bi_m_full.txt"),
+    file = file.path(performance_output_data_dir, "fitted_model_object_p_r_bi_m_full")
+  )
+```
+
+Plot model diagnostics
+```{r Show traceplot and Rhat for m_full}
+irmass::plot_mcmc_analysis(m_full)
+```
+
+```{r Plot posterior densities of full model}
+irmass::plot_posterior(m_full)
+```
+
+
+#### Model comparison
+
+Compare all models against null model, based on the Bayes Factor (i.e. $log(B_{10})$)
+```{r Compare models against null model}
+BF_m_td_vs_m_0 <- brms::bayes_factor(m_td, m_0, log = TRUE)
+BF_m_stoptype_vs_m_0 <- brms::bayes_factor(m_stoptype, m_0, log = TRUE)
+BF_m_td_stoptype_vs_m_0 <- brms::bayes_factor(m_td_stoptype, m_0, log = TRUE)
+BF_m_full_vs_m_0 <- brms::bayes_factor(m_full, m_0, log = TRUE)
+```
+
+```{r Put model comparison findings in a tibble}
+
+model_comparison_resp <- 
+  tibble::tibble(comparison = character(),
+                 B10 = double(),
+                 log.scale = logical(),
+                 numerator = list(),
+                 denominator = list()) %>%
+  tibble::add_row(comparison = deparse(substitute(BF_m_td_vs_m_0)),
+                  B10 = BF_m_td_vs_m_0$bf,
+                  log.scale = BF_m_td_vs_m_0$log,
+                  numerator = list(m_td),
+                  denominator = list(m_0)) %>%
+  tibble::add_row(comparison = deparse(substitute(BF_m_stoptype_vs_m_0)),
+                  B10 = BF_m_stoptype_vs_m_0$bf,
+                  log.scale = BF_m_stoptype_vs_m_0$log,
+                  numerator = list(m_stoptype),
+                  denominator = list(m_0)) %>%
+  tibble::add_row(comparison = deparse(substitute(BF_m_td_stoptype_vs_m_0)),
+                  B10 = BF_m_td_stoptype_vs_m_0$bf,
+                  log.scale = BF_m_td_stoptype_vs_m_0$log,
+                  numerator = list(m_td_stoptype),
+                  denominator = list(m_0)) %>%
+  tibble::add_row(comparison = deparse(substitute(BF_m_full_vs_m_0)),
+                  B10 = BF_m_full_vs_m_0$bf,
+                  log.scale = BF_m_full_vs_m_0$log,
+                  numerator = list(m_stoptype),
+                  denominator = list(m_full))
+
+model_comparison_resp
+
+winning_model_resp <- 
+  model_comparison_resp %>% 
+  dplyr::arrange(-B10) %>% 
+  dplyr::slice(1) %>% 
+  dplyr::pull(numerator)
+```
+
+### Bayesian ANOVA of $RT_{stop-respond,bi}$
+
+This is Analysis 9 of the pre-registration document
+
+```{r Bayesian ANOVA of stop-signal respond RT}
+# Bayes factor analysis of stop-respond RT
+bfa_stop_respond_rt <- 
+  BayesFactor::anovaBF(mean_RT ~ t_d_alt*trial_alt + subjectIx,
+                       data = tidy_rt_data_inf,
+                       whichRandom = "subjectIx",
+                       rscaleFixed = irmass::get_bf_settings('rscale')) %>%
+  print()
+```
+
+
+# Visualize data
+
+## Descriptive statistics / Exploratory data analysis
+
+```{r Plot trial proportion descriptives, warning=FALSE}
+plt_resp_dsc_stats <- 
+  cnmss::plot_trial_proportion_descriptives(tbl = tidy_resp_data_dsc ) %>% 
+  print()
+```
+
+```{r Plot trial response time descriptives, warning=FALSE}
+plt_rt_dsc_stats <- 
+  cnmss::plot_trial_rt_descriptives(tbl = tidy_resp_rt_data_dsc) %>%
+  print()
+```
+
+
+```{r Merge descriptives plots using cowplot, warning=FALSE}
+
+# N.B. plot will be further rearranged for publication purposes
+
+lgnd <- cowplot::get_legend(plt_resp_dsc_stats)
+
+plt_performance_dsc_stats <- 
+  cowplot::plot_grid(plt_resp_dsc_stats +
+                       ggplot2::theme(legend.position = "none"), 
+                     lgnd,
+                     plt_rt_dsc_stats + 
+                       ggplot2::theme(legend.position = "none"), 
+                     labels = c("A","","B",""),
+                     align = "hv",
+                     nrow = 2,
+                     rel_widths = c(.8,.2),
+                     rel_heights = c(.5,.5)) %>%
+  print()
+```
+
+
+## Inferential statistics
+
+```{r Sample draws from posterior of best fitting model}
+# Sample draws from posterior of best fitting model
+posterior_fit <- 
+  modelr::data_grid(tidy_resp_data_inf, 
+                    subjectIx, 
+                    trial_alt, 
+                    t_d = modelr::seq_range(t_d, n = 100)) %>%
+  tidybayes::add_fitted_draws(winning_model_resp[[1]], value = "p_r_bi", n = 100)
+```
+
+
+Plot of probability of responding bimanually give a stop-signal as a function of stop-signal delay and selective stopping type
+```{r Plot of probability of responding bimanually give a stop-signal}
+plt_p_r_bi_inf <- 
+  cnmss::plot_p_r_bi_fit(
+    obs = tidy_resp_data_inf_grp,
+    posterior_fit = posterior_fit,
+    t_d_pos = unique_tds) %>%
+  print()
+```
+
+Plot of mean stop-respond RT as a function of stop-signal delay category and selective stopping type
+
+```{r Plot of mean stop-respond RT}
+plt_stop_respond_rt_inf <- 
+  cnmss::plot_stop_respond_rt(
+    tbl = tidy_rt_data_inf) %>%
+  print()
+```
+
+```{r Plot of task performance inferential stats}
+plt_performance_inf_stats <- 
+  cowplot::plot_grid(plt_p_r_bi_inf, plt_stop_respond_rt_inf,
+                     nrow = 1, 
+                     labels = c("A", "B")) %>%
+  print()
+```
+
+
+# Write data to disk
+
+### Analysis and plot inputs
+
+Write inputs to descriptive and inferential statistical analyses to disk
+```{r Write analysis inputs to disk}
+
+# Descriptive statistics - response proportion data
+readr::write_csv(tidy_resp_data_dsc,
+                 path = file.path(performance_output_data_dir, "tidy_resp_data_dsc.csv")
+                 )
+# Descriptive statistics - response time data
+readr::write_csv(tidy_resp_rt_data_dsc,
+                 path = file.path(performance_output_data_dir, "tidy_resp_rt_data_dsc.csv")
+                 )
+
+# Inputs for inferential statistical analysis - response proportion data
+readr::write_csv(tidy_resp_data_inf,
+                 path = file.path(performance_output_data_dir, "tidy_resp_data_inf")
+                 )
+# Inputs for inferential statistical analysis - response time data
+readr::write_csv(tidy_rt_data_inf,
+                 path = file.path(performance_output_data_dir, "tidy_rt_data_inf")
+                 )
+```
+
+### Analysis outputs
+
+Bayesian hypothesis testing of probability of responding given a stop-signal
+```{r Write output of Bayesian hypothesis testing of probability of responding given a stop-signal to disk}
+readr::write_csv(model_comparison_resp %>% dplyr::select(comparison, B10, log.scale),
+                 path = file.path(performance_output_data_dir,
+                                  "model_comparison_bayesian_logistic_regression_p_r_bi.csv")
+                 )
+```
+
+Bayesian hypothesis testing of stop-respond RT
+```{r Write output of Bayesian hypothesis testing of stop-respond RT to disk}
+readr::write_csv(bfa_stop_respond_rt@bayesFactor %>% tibble::as_tibble(),
+                 path = file.path(performance_output_data_dir,
+                                  "model_comparison_bayesian_anova_stop_respond_rt.csv")
+                 )
+```
+
+### Plot outpus
+```{r Save plots to disk}
+
+# Plot of descriptive statistics - response proportions
+ggplot2::ggsave(path = figures_dir, 
+                filename = "plt_resp_dsc_stats.pdf",
+                plt_resp_dsc_stats,
+                width = 18,
+                height = 5,
+                units = "cm")
+
+# Plot of descriptive statistics - response time distributions
+ggplot2::ggsave(path = figures_dir, 
+                filename = "plt_rt_dsc_stats.pdf",
+                plt_rt_dsc_stats,
+                width = 18,
+                height = 5,
+                units = "cm")
+
+# Plot of descriptive statistics - response proportions and response time distributions combined 
+ggplot2::ggsave(path = figures_dir, 
+                filename = "plt_performance_dsc_stats.pdf",
+                plt_performance_dsc_stats,
+                width = 18,
+                height = 10,
+                units = "cm")
+
+# Plot of data used for inferential statistics - response proportions
+ggplot2::ggsave(path = figures_dir, 
+                filename = "plt_p_r_bi_inf.pdf",
+                plt_p_r_bi_inf,
+                width = 9,
+                height = 6,
+                units = "cm")
+
+# Plot of data used for inferential statistics - response time distributions
+ggplot2::ggsave(path = figures_dir, 
+                filename = "plt_stop_respond_rt_inf.pdf",
+                plt_stop_respond_rt_inf,
+                width = 9,
+                height = 6,
+                units = "cm")
+
+# Plot of data used for inferential statistics - response proportions and response time distributions combined 
+ggplot2::ggsave(path = figures_dir, 
+                filename = "plt_performance_inf_stats.pdf",
+                plt_performance_inf_stats,
+                width = 18,
+                height = 12,
+                units = "cm")
+```
+
+### Other
+
+```{r Save summary statistics to disk}
+
+# These summary statistics may be useful for reporting in manuscript
+readr::write_csv(summary_stats_resp,
+                 path = file.path(performance_output_data_dir,
+                                  "summary_stats_resp.csv")
+                 )
+
+readr::write_csv(summary_stats_resp_t_d,
+                 path = file.path(performance_output_data_dir,
+                                  "summary_stats_resp_per_t_d.csv")
+                 )
+
+readr::write_csv(summary_stats_rt,
+                 path = file.path(performance_output_data_dir,
+                                  "summary_stats_rt.csv")
+                 )
+```

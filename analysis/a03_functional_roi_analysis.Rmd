@@ -1,0 +1,329 @@
+---
+params:  
+  title: "a03_functional_roi_analysis"
+title: '`r stringr::str_to_title(stringr::str_replace_all(params$title, pattern = "_", replacement = " "))`'
+date: "`r format(Sys.Date(), '%B %d, %Y')`"
+output: 
+  bookdown::html_document2:
+    toc: true
+    number_sections: true
+    fig_caption: true
+    df_print: paged
+    code_folding: hide
+    theme: readable
+    highlight: pygments
+---
+
+```{r setup, include=FALSE}
+knitr::opts_knit$set(root.dir = rprojroot::find_root(rprojroot::has_file("DESCRIPTION")))
+knitr::opts_knit$set(eval.after = 'fig.cap')
+
+require(tidyverse)
+
+# This is a workaround for a recent problem with devtools::install_github 
+# (see: https://github.com/r-lib/devtools/issues/2029)
+packrat::extlib("irmass")
+```
+
+# Overview
+This notebook contains the planned and exploratory analyses of functional ROI data.
+The planned analyses assess the activation levels in three contrasts
+
+The exploratory analyses investigate why activation levels in the selective stopping contrast are around 0.
+
+# Preliminaries
+
+Specification of:
+
+```{r Define notebook name, based on YAML header}
+notebook_name <- 
+   stringr::str_to_lower(stringr::str_replace_all(params$title, " ", "_"))
+```
+- the _name of the notebook (`notebook_name`)_, which is used to save output to a notebook-specific directory
+
+```{r Define relevant directories for reading and writing data and create whenever needed}
+
+func_roi_contrast_estimates_dir <- 
+  file.path("data", "derivatives","a02_extract_mean_contrast_estimates_from_functional_rois")
+
+# Derivatives will be written here
+func_roi_contrast_estimates_plotdata_dir <- 
+  file.path("data","derivatives", notebook_name)
+
+# Figures will be written here
+figures_dir <- 
+  file.path("figures", notebook_name)
+
+irmass::verify_output_dirs(base_dirs = list(dirname(func_roi_contrast_estimates_plotdata_dir), 
+                                            dirname(figures_dir)),
+                           notebook_name = notebook_name)
+```
+- all _relevant directories_ for reading and writing data
+
+
+# Read data
+
+Contrast estimates from key ROIs in tidy format
+```{r Read contrast estimates from key ROIs in tidy format}
+roi_data <- 
+  readr::read_csv(file.path(func_roi_contrast_estimates_dir, "functional_roi_mean_contrast_estimates.csv"),
+                  col_types = readr::cols_only(iData = readr::col_integer(),
+                                               roiFileName = readr::col_character(),
+                                               roiHemi = readr::col_character(),
+                                               conName = readr::col_character(),
+                                               mean_activation = readr::col_double()
+                                               )
+                  )
+```
+
+# Clean data
+
+## Rename variables
+```{r Rename variables}
+clean_roi_data <- 
+  roi_data %>%
+  dplyr::rename(ROI = roiFileName,
+                Hemisphere = roiHemi,
+                contrast = conName)
+```
+
+
+```{r Flag outliers}
+roi_data_outliers_flagged <- 
+  irmass::identify_outlying_values(df = clean_roi_data, 
+                                   group_vars = c('ROI', 'Hemisphere', 'contrast'), 
+                                   dep_var = 'mean_activation', 
+                                   z_threshold = 2.5)
+```
+
+# Analyze data
+
+## Compute Bayes Factors using one-sample t-test
+We test whether activation on stop trials differs from activation on control trials
+```{r Compute Bayes factors using one-sample t-tests}
+bf_data <- 
+  roi_data_outliers_flagged %>%
+  dplyr::group_by(ROI, Hemisphere, contrast) %>%
+  dplyr::filter(is_outlier == FALSE) %>%
+  dplyr::summarize(count = dplyr::n(),
+                   BF10 = exp(BayesFactor::ttestBF(x = mean_activation, 
+                                                   # Prior scale in line with preregistration
+                                                   rscale = 0.5)@bayesFactor$bf),
+                   BF01 = 1 / BF10) 
+```
+
+
+```{r Join Bayes factor and outlier data and do some further preprocessing}
+all_roi_data <- 
+  roi_data_outliers_flagged %>%
+  dplyr::filter(is_outlier == FALSE) %>%
+  dplyr::filter(contrast %in% c("stop_as_left", # For Analysis 10 in preregistration
+                                "stop_as_right", # For Analysis 10 in preregistration
+                                "stop_ss", # For Analysis 11 in preregistration
+                                'stop_as_left_vs_stop_ss', # For Analysis 12 in preregistration
+                                'stop_as_right_vs_stop_ss', # For Analysis 12 in preregistration 
+                                'stop_as_left_vs_no_signal_slow', # For exploratory analysis (alternative to Analysis 10)
+                                'stop_as_right_vs_no_signal_slow', # For exploratory analysis (alternative to Analysis 10)
+                                'stop_ss_vs_no_signal_slow' # For exploratory analysis (alternative to Analysis 11)
+                                )                
+                ) %>%
+  dplyr::left_join(bf_data, by = c('ROI','Hemisphere','contrast')) %>%
+  # Convert ROI and contrast to categorical variables with specific order / label for plotting purposes
+  dplyr::mutate(ROI = factor(ROI, 
+                             levels = c('IFG','IFJ','Striatum','preSMA', 'SMA','PMd','M1'),
+                             ordered = TRUE),
+                contrast = factor(contrast,
+                                  levels = c('stop_as_left',
+                                             'stop_as_right',
+                                             'stop_ss',
+                                             'stop_as_left_vs_stop_ss',
+                                             'stop_as_right_vs_stop_ss',
+                                             'stop_as_left_vs_no_signal_slow',
+                                             'stop_as_right_vs_no_signal_slow',
+                                             'stop_ss_vs_no_signal_slow'
+                                             ),
+                                  labels = c(expression(S['AS, left']),
+                                             expression(S['AS, right']),
+                                             expression(S['SS']),
+                                             expression(S['AS, left'] - S['SS']),
+                                             expression(S['AS, right'] - S['SS']),
+                                             expression(S['AS, left'] - NS['slow']),
+                                             expression(S['AS, right'] - NS['slow']),
+                                             expression(S['SS'] - NS['slow'])
+                                             )
+                                  )
+                )
+
+# expression(atop(paste(S['AS, left'], " vs. "), S['SS'])),
+                                             # expression(atop(paste(S['AS, right'], " vs. "), S['SS'])),
+                                             # expression(atop(paste(S['AS, left'], " vs. "), NS['slow'])),
+                                             # expression(atop(paste(S['AS, right'], " vs. "), NS['slow'])),
+                                             # expression(atop(paste(S['SS'], " vs. "), NS['slow']))
+
+# Data for preregistered Analysis 10 & 11
+(roi_data_stop <- 
+    all_roi_data %>%
+    dplyr::filter(contrast %in% c(expression(S['AS, left']),
+                                  expression(S['AS, right']),
+                                  expression(S['SS'])
+                                  )
+                  )
+  )
+
+# Data for preregistered Analysis 12
+(roi_data_as_vs_ss_stop <- 
+    all_roi_data %>%
+    dplyr::filter(contrast %in% c(expression(S['AS, left'] - S['SS']),
+                                  expression(S['AS, right'] - S['SS'])
+                                  )
+                  )
+  )
+
+
+# Data for exploratory alternative to Analysis 10 & 11
+(roi_data_stop_vs_no_signal <- 
+    all_roi_data %>%
+    dplyr::filter(contrast %in% c(expression(S['AS, left'] - NS['slow']),
+                                  expression(S['AS, right'] - NS['slow']),
+                                  expression(S['SS'] - NS['slow'])
+                                  )
+                  )
+  )
+```
+
+# Visualize data
+
+This visualizes the results of Analysis 10 of the pre-registration
+
+```{r Plot action-selective stopping contrast estimates of functional ROIs}
+plt_stop_as_stop <- 
+  cnmss::plot_roi_data(roi_data_stop %>% 
+                         dplyr::filter(contrast %in% c('S[\"AS, left\"]', 'S[\"AS, right\"]')),
+                       ylm = c(-8,8)) %>%
+  print()
+```
+
+This visualizes the results of Analysis 11 of the pre-registration
+
+```{r Plot stimulus-selective stopping contrast estimates of functional ROIs}
+plt_stop_ss_stop <- 
+  cnmss::plot_roi_data(roi_data_stop %>% 
+                         dplyr::filter(contrast %in% c('S["SS"]')),
+                       ylm = c(-8,8)) %>%
+  print()
+```
+
+This visualizes the results of Analysis 12 of the pre-registration
+
+```{r Plot action- vs. stimulus selective stopping contrast estimates of functional ROIs}
+plt_as_vs_ss_stop <- 
+  cnmss::plot_roi_data(roi_data_as_vs_ss_stop) %>%
+  print()
+```
+
+The analyses below visualizes the results from analyses that were not pre-registered (planned)
+
+```{r Plot action-selective stopping vs. no-signal contrast estimates of functional ROIs}
+plt_as_stop_vs_no_signal <- 
+  cnmss::plot_roi_data(roi_data_stop_vs_no_signal %>% 
+                         dplyr::filter(contrast %in% c('S[\"AS, left\"] - NS[\"slow\"]', 'S[\"AS, right\"] - NS[\"slow\"]')), 
+                       ylm = c(-8,8)) %>%
+  print()
+```
+
+
+
+```{r Plot stimulus-selective stopping vs. no-signal contrast estimates of functional ROIs}
+plt_ss_stop_vs_no_signal <- 
+  cnmss::plot_roi_data(roi_data_stop_vs_no_signal %>% 
+                         dplyr::filter(contrast %in% c('S["SS"] - NS[\"slow\"]')), 
+                       ylm = c(-8,8)) %>%
+  print()
+```
+
+# Write data to disk
+
+## Data underlying plots
+```{r Write data underlying plots to disk}
+func_roi_contrast_estimates_plotdata_dir
+
+# Make file name human- and machine-readable, so that main results can be read from file name
+
+func_roi_plotdata_stop_file <- 
+  file.path(func_roi_contrast_estimates_plotdata_dir,
+            "func_roi_plotdata_stop.csv")
+
+func_roi_plotdata_as_vs_ss_stop_file <- 
+  file.path(func_roi_contrast_estimates_plotdata_dir,
+            "func_roi_plotdata_as_vs_ss_stop.csv")
+
+func_roi_plotdata_stop_vs_no_signal_file <- 
+  file.path(func_roi_contrast_estimates_plotdata_dir,
+            "func_roi_plotdata_stop_vs_no_signal.csv")
+
+# Write data to disk
+readr::write_csv(roi_data_stop,
+                 path = func_roi_plotdata_stop_file) %>%
+print(sprintf("%s", func_roi_plotdata_stop_vs_no_signal_file))
+
+readr::write_csv(roi_data_as_vs_ss_stop,
+                 path = func_roi_plotdata_as_vs_ss_stop_file) %>%
+print(sprintf("%s", func_roi_plotdata_stop_vs_no_signal_file))
+
+readr::write_csv(roi_data_stop_vs_no_signal,
+                 path = func_roi_plotdata_stop_vs_no_signal_file) %>%
+print(sprintf("%s", func_roi_plotdata_stop_vs_no_signal_file))
+```
+
+## Plots
+
+```{r Save plots to disk}
+
+ggplot2::ggsave(path = figures_dir, 
+                filename = "plt_stop_as_stop.pdf",
+                plt_stop_as_stop %>%
+                  egg::set_panel_size(p = ., 
+                                      height = unit(4, "cm"),
+                                      width = unit(2, "cm")),
+                width = 18,
+                units = "cm")
+
+ggplot2::ggsave(path = figures_dir, 
+                filename = "plt_stop_ss_stop.pdf",
+                plt_stop_ss_stop %>%
+                  egg::set_panel_size(p = ., 
+                                      height = unit(4, "cm"),
+                                      width = unit(2, "cm")),
+                width = 18,
+                units = "cm")
+
+ggplot2::ggsave(path = figures_dir, 
+                filename = "plt_as_vs_ss_stop.pdf",
+                plt_as_vs_ss_stop %>%
+                  egg::set_panel_size(p = ., 
+                                      height = unit(4, "cm"),
+                                      width = unit(2, "cm")),
+                width = 18,
+                units = "cm")
+
+ggplot2::ggsave(path = figures_dir, 
+                filename = "plt_as_stop_vs_no_signal.pdf",
+                plt_as_stop_vs_no_signal %>%
+                  egg::set_panel_size(p = ., 
+                                      height = unit(4, "cm"),
+                                      width = unit(2, "cm")),
+                width = 18,
+                units = "cm")
+
+ggplot2::ggsave(path = figures_dir, 
+                filename = "plt_ss_stop_vs_no_signal.pdf",
+                plt_ss_stop_vs_no_signal %>%
+                  egg::set_panel_size(p = ., 
+                                      height = unit(4, "cm"),
+                                      width = unit(2, "cm")),
+                width = 18,
+                units = "cm")
+
+
+```
+
