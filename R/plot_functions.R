@@ -185,31 +185,6 @@ plot_trial_rt_descriptives <- function(tbl) {
 
 }
 
-#' plot_mcmc_analysis ##########################################################
-#' Plots graphical diagnostics of MCMC chains (for models fit with brms)
-#'
-#' @param mdl, brmsfit object
-#' @export
-plot_mcmc_analysis <- function(mdl) {
-  mdl_long <- ggmcmc::ggs(mdl)
-
-  # Trace plot
-  plt_trace <-
-    ggmcmc::ggs_traceplot(mdl_long) +
-    ggplot2::facet_wrap("Parameter") +
-    irmass::theme_irmass() +
-    ggplot2::theme(legend.position = "bottom",
-                   axis.text.x = ggplot2::element_text(angle = 90,
-                                                       hjust = 1))
-
-  # Plot of Rhat
-  plt_rhat <-
-    ggmcmc::ggs_Rhat(mdl_long) +
-    irmass::theme_irmass()
-
-  return(list(plt_trace, plt_rhat))
-}
-
 #' plot_p_r_bi_fit #############################################################
 #' Plots probability of responding bimanually plus predictions from the best-fitting model
 #'
