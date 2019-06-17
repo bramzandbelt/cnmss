@@ -11,6 +11,7 @@ notebook_ix <- as.integer(args[1])
 notebook_file <-
   switch(notebook_ix,
          "1" = "a01_task_performance_analysis.Rmd",
+         "2" = "",
          "3" = "a03_functional_roi_analysis.Rmd"
          )
 
