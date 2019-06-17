@@ -215,7 +215,7 @@ plot_p_r_bi_fit <- function(obs, posterior_fit, t_d_pos) {
                           geom = "line",
                           size = 1) +
 
-    ggplot2::stat_summary(data = tidy_resp_data_inf_grp,
+    ggplot2::stat_summary(data = obs,
                           mapping = ggplot2::aes(group = interaction(trial_alt)),
                           fun.y = "mean",
                           geom = "point",
