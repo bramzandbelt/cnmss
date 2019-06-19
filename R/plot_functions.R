@@ -72,7 +72,7 @@ plot_roi_data <- function(df, ylm = c(-10,10)) {
                                 limits = ylm) +
     # Themes  --------------------------------------------------------------------
     irmass::theme_irmass() +
-    ggplot2::theme(panel.spacing = ggplot2::unit(0.05, "cm"),
+    ggplot2::theme(panel.spacing = ggplot2::unit(0.01, "cm"),
                    legend.position = "right",
                    legend.text = ggplot2::element_text(size = 5),
                    axis.text.x = ggplot2::element_text(angle = 0,
