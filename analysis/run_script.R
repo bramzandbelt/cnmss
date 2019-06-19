@@ -16,7 +16,7 @@ notebook_file <-
          )
 
 # Define input dir (notebook_templates_dir) and output dir (reports_dir)
-notebook_dir <- "analysis"
+notebook_dir <- "analysis/notebooks_and_scripts"
 reports_dir <- "reports"
 
 # Create non-existing dirs if they don't exist
