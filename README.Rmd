@@ -45,7 +45,7 @@ TBA
 
 The packagae `cnmss` is one of two research compendia of the research project _Cognitive and Neurobiological Mechanisms of Selective Stopping_ by Bram Zandbelt and Ruben van den Bosch (the other research compendium, `irmass`, can be found [here](github.com/bramzandbelt/irmass)). This project was conducted at the Donders Institute, Radboud University, Nijmegen, the Netherlands, and registered at the Donders Centre for Cognitive Neuroimaging under project number 3017031.05 (DCCN PI: Roshan Cools).
 
-This research compendium contains data, code, and text associated with the above-mentioned publication and is organized as follows:
+This research compendium contains data, code, and text associated with the above-mentioned publication and is organized as follows (showing directories in a tree-like format with a maximum depth of two levels):
 
 
 ```
