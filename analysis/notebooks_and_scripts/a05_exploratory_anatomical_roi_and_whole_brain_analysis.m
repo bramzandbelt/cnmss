@@ -3,7 +3,7 @@
 currentFile     = mfilename('fullpath');
 pathstr         = fileparts(currentFile);
 project_dir     = fullfile(pathstr,'../');
-mfile_dir       = fullfile(project_dir,'m-files');
+mfile_dir       = fullfile(project_dir,'MATLAB');
 
 addpath(mfile_dir)
 
