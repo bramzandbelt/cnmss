@@ -3,7 +3,7 @@
 % Contrast Manager: Name - cfg_entry
 % Contrast Manager: Weights vector - cfg_entry
 nrun = X; % enter the number of runs here
-jobfile = {'m-files/spm_batches/con_manager_job.m'};
+jobfile = {'MATLAB/spm_batches/con_manager_job.m'};
 jobs = repmat(jobfile, 1, nrun);
 inputs = cell(3, nrun);
 for crun = 1:nrun

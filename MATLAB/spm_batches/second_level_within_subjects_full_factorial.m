@@ -7,7 +7,7 @@
 % Factorial design specification: Levels - cfg_entry
 % Factorial design specification: Scans - cfg_files
 nrun = X; % enter the number of runs here
-jobfile = {'m-files/spm_batches/second_level_within_subjects_full_factorial_job.m'};
+jobfile = {'MATLAB/spm_batches/second_level_within_subjects_full_factorial_job.m'};
 jobs = repmat(jobfile, 1, nrun);
 inputs = cell(7, nrun);
 for crun = 1:nrun

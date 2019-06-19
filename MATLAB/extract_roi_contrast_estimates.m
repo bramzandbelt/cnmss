@@ -5,7 +5,7 @@
 currentFile     = mfilename('fullpath');
 pathstr         = fileparts(currentFile);
 project_dir     = fullfile(pathstr,'../');
-mfile_dir       = fullfile(project_dir,'m-files');
+mfile_dir       = fullfile(project_dir,'MATLAB');
 data_dir        = fullfile(project_dir,'data');
 stat_dir        = fullfile(data_dir,'fmri','stat');
 conmap_dir      = fullfile(data_dir,'fmri','contrast_images');

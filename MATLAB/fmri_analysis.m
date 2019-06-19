@@ -64,7 +64,7 @@ cd(project_dir)
 % Run statistical models
 % =========================================================================
 conmap_dir      = fullfile(data_dir,'fmri','contrast_images');
-batch_dir       = fullfile(project_dir,'m-files','spm_batches');
+batch_dir       = fullfile(project_dir,'MATLAB','spm_batches');
 
 anat_roi_mask   = fullfile(roi_dir, 'anatomical_classical_svc', 'anatomical_rois.nii');
 
