@@ -4,7 +4,6 @@ packrat/lib*/
 man/*.Rd
 .RData
 .Rhistory
-*.html
 
 # Raw data and lab notebook
 data/raw/*
