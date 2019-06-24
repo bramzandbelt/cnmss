@@ -7,7 +7,6 @@ pathstr         = fileparts(currentFile);
 project_dir     = fullfile(pathstr,'../');
 mfile_dir       = fullfile(project_dir,'MATLAB');
 data_dir        = fullfile(project_dir,'data');
-stat_dir        = fullfile(data_dir,'fmri','stat');
 conmap_dir      = fullfile(data_dir,'fmri','contrast_images');
 roi_dir         = fullfile(data_dir,'fmri','region_of_interest_masks');
 output_dir      = fullfile(data_dir,'derivatives','a02_extract_mean_contrast_estimates_from_functional_rois');
