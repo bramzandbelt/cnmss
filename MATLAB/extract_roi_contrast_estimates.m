@@ -17,7 +17,6 @@ if ~exist(output_dir, 'dir')
 end
 
 % Add paths
-% addpath(genpath('/Users/bramzandbelt/Documents/MATLAB/spm12/'))
 addpath(genpath(mfile_dir))
 addpath(genpath(fullfile(project_dir,'opt','panel-2.12')))
 addpath(genpath(fullfile(project_dir,'opt','slice_display')))
