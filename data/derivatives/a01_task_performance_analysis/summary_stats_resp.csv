@@ -1,0 +1,6 @@
+trial,mean,md,P_25,P_75,IQR,sd,min,max
+stop-left,NaN,NA,NA,NA,NA,NaN,Inf,-Inf
+stop-right,NaN,NA,NA,NA,NA,NaN,Inf,-Inf
+stop-both,NaN,NA,NA,NA,NA,NaN,Inf,-Inf
+ignore,NaN,NA,NA,NA,NA,NaN,Inf,-Inf
+no-signal,NaN,NA,NA,NA,NA,NaN,Inf,-Inf
