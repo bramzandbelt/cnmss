@@ -155,6 +155,11 @@ Finally, this research compendium is associated with a number of online objects,
 </tbody>
 </table>
 
+In this experiment, we used the following StPy stimulus presentation configuration files (under `config/` in `StPy`):
+
+-   `expt_3017031-05-Expt02-A.yaml`
+-   `expt_3017031-05-Expt02-B.yaml`
+
 How to use
 ----------
 
@@ -164,9 +169,13 @@ To download the package source as you see it on GitHub, for offline browsing, us
 
 Install `cnmss` package from Github:
 
-``` r
-devtools::install_github("bramzandbelt/cnmss")
-```
+-   From R:
+
+        devtools::install_github("bramzandbelt/cnmss")
+
+-   From the command line:
+
+        git clone https://github.com/bramzandbelt/cnmss.git
 
 Once the download is complete, open the file `cnmss.Rproj` in RStudio to begin working with the package and compendium files. To reproduce all analyses, run the shell script `analysis/bash/run_all_analyses.sh`. This will run all RMarkdown notebooks and MATLAB scripts in correct order. It may take a while to complete.
 
