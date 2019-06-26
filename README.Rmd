@@ -62,8 +62,7 @@ This research compendium contains data, code, and text associated with the above
 │   └── performance
 ├── documents
 │   ├── content
-│   ├── context
-│   └── manuscript
+│   └── context
 ├── figures
 │   ├── a01_task_performance_analysis
 │   ├── a03_functional_roi_analysis
@@ -169,9 +168,6 @@ Manuscript: CC-BY-4.0 [http://creativecommons.org/licenses/by/4.0/](http://creat
 
 Code: MIT [http://opensource.org/licenses/MIT](http://opensource.org/licenses/MIT), year: 2019, copyright holders: Bram B. Zandbelt & Ruben van den Bosch
 
-Data: Data Use Agreement of Donders Institute <!-- TODO: Add URL -->
-
-
 ## Dependencies
 
 Below is the output of R's function `sessionInfo()`, showing version information about R, the OS, and attached or loaded packages:
@@ -180,9 +176,7 @@ Below is the output of R's function `sessionInfo()`, showing version information
 sessionInfo()
 ```
 
-Packrat takes care of dependencies in R.
-
-In addition, MATLAB R2014b is needed (we used v.8.4.0 150421) and SPM12 (we used v6470) should be on the MATLAB search path (e.g. by adding its path to the file `startup.m`). Other MATLAB packages are located in the `opt/` directory. 
+Packrat takes care of dependencies in R. In addition, Stan (we used v.2.18.1) is needed. Finally, MATLAB R2014b is needed (we used v.8.4.0 150421) and SPM12 (we used v6470) should be on the MATLAB search path (e.g. by adding its path to the file `startup.m`). Other MATLAB packages are located in the `opt/` directory. 
 
 ## Acknowledgment
 

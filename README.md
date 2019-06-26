@@ -1,5 +1,5 @@
 <!-- README.md is generated from README.Rmd. Please edit that file -->
-[![Last-changedate](https://img.shields.io/badge/last%20change-2019--06--19-brightgreen.svg)](https://github.com/bramzandbelt/cnmss/commits/master) [![minimal R version](https://img.shields.io/badge/R%3E%3D-3.6.0-brightgreen.svg)](https://cran.r-project.org/) [![Task DOI](https://zenodo.org/badge/49258308.svg)](https://zenodo.org/badge/latestdoi/49258308) [![Licence](https://img.shields.io/github/license/mashape/apistatus.svg)](http://choosealicense.com/licenses/mit/) [![ORCiD](https://img.shields.io/badge/ORCiD-0000--0002--6491--1247-green.svg)](https://orcid.org/0000-0002-6491-1247)
+[![Last-changedate](https://img.shields.io/badge/last%20change-2019--06--26-brightgreen.svg)](https://github.com/bramzandbelt/cnmss/commits/master) [![minimal R version](https://img.shields.io/badge/R%3E%3D-3.6.0-brightgreen.svg)](https://cran.r-project.org/) [![Task DOI](https://zenodo.org/badge/49258308.svg)](https://zenodo.org/badge/latestdoi/49258308) [![Licence](https://img.shields.io/github/license/mashape/apistatus.svg)](http://choosealicense.com/licenses/mit/) [![ORCiD](https://img.shields.io/badge/ORCiD-0000--0002--6491--1247-green.svg)](https://orcid.org/0000-0002-6491-1247)
 
 cnmss - Research compendium for the report on the cognitive and neural mechanisms of selective stopping by Zandbelt & Van den Bosch
 ===================================================================================================================================
@@ -47,8 +47,7 @@ This research compendium contains data, code, and text associated with the above
     │   └── performance
     ├── documents
     │   ├── content
-    │   ├── context
-    │   └── manuscript
+    │   └── context
     ├── figures
     │   ├── a01_task_performance_analysis
     │   ├── a03_functional_roi_analysis
@@ -177,8 +176,6 @@ Manuscript: CC-BY-4.0 <http://creativecommons.org/licenses/by/4.0/>
 
 Code: MIT <http://opensource.org/licenses/MIT>, year: 2019, copyright holders: Bram B. Zandbelt & Ruben van den Bosch
 
-Data: Data Use Agreement of Donders Institute <!-- TODO: Add URL -->
-
 Dependencies
 ------------
 
@@ -207,9 +204,7 @@ sessionInfo()
 #> [13] packrat_0.5.0   evaluate_0.14
 ```
 
-Packrat takes care of dependencies in R.
-
-In addition, MATLAB R2014b is needed (we used v.8.4.0 150421) and SPM12 (we used v6470) should be on the MATLAB search path (e.g. by adding its path to the file `startup.m`). Other MATLAB packages are located in the `opt/` directory.
+Packrat takes care of dependencies in R. In addition, Stan (we used v.2.18.1) is needed. Finally, MATLAB R2014b is needed (we used v.8.4.0 150421) and SPM12 (we used v6470) should be on the MATLAB search path (e.g. by adding its path to the file `startup.m`). Other MATLAB packages are located in the `opt/` directory.
 
 Acknowledgment
 --------------
